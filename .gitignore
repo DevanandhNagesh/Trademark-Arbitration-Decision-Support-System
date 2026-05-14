@@ -38,6 +38,7 @@ output/
 *.docx
 
 ### Data and caches
+data/
 data/chroma_db_test/
 knowledge_base/chroma_db/
 chromadb/

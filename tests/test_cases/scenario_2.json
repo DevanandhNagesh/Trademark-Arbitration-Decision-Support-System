@@ -1,0 +1,11 @@
+{
+  "party_a": "Apex Beverages Ltd",
+  "party_b": "Metro Distributors Pvt Ltd",
+  "trademark_name": "APEX COOL",
+  "dispute_type": "License Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "Party A licensed their registered trademark APEX COOL to Party B under a Distribution Agreement dated 1 January 2022 for a period of 2 years expiring on 31 December 2023. Party B continued manufacturing and selling products bearing the APEX COOL trademark after expiry of the agreement without authorization and without payment of royalties. The Distribution Agreement contains an arbitration clause at Clause 14 providing for arbitration under the Arbitration and Conciliation Act 1996 with seat at New Delhi. Party A seeks injunction, rendition of accounts, and damages."
+}

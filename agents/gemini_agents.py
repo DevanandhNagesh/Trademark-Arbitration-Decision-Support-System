@@ -4,6 +4,7 @@ import json
 import os
 import re
 import sys
+import time
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -12,6 +13,7 @@ import openai as groq_client
 from openai import OpenAI
 
 from config import GEMINI_API_KEY, MODEL_CONFIG
+from logging_config import logger
 
 # Configure Gemini
 genai.configure(api_key=GEMINI_API_KEY)
@@ -25,47 +27,75 @@ def _strip_json_fences(text: str) -> str:
     return text.strip()
 
 
-def _call_gemini(prompt: str) -> str:
-    """Call Gemini API, fall back to Groq then LM Studio on failure."""
+def _call_gemini_api(prompt: str) -> str:
+    start_time = time.time()
     try:
         model = genai.GenerativeModel(MODEL_CONFIG["primary"])
         response = model.generate_content(prompt)
+        latency = time.time() - start_time
+        logger.info(f"LLM call succeeded - Provider: gemini - Latency: {latency:.3f}s")
         return response.text
     except Exception as e:
-        print(f"Gemini API failed: {e}. Falling back to Groq...")
-        try:
-            return _call_groq_fallback(prompt)
-        except Exception as groq_error:
-            print(f"Groq API failed: {groq_error}. Falling back to LM Studio...")
-            return _call_lm_studio(prompt)
+        latency = time.time() - start_time
+        logger.error(f"LLM call failed - Provider: gemini - Latency: {latency:.3f}s - Error: {e}")
+        raise
 
 
 def _call_groq_fallback(prompt: str) -> str:
     """Call Groq API as secondary fallback."""
-    client = groq_client.OpenAI(
-        base_url="https://api.groq.com/openai/v1",
-        api_key=os.getenv("GROQ_API_KEY"),
-    )
-    response = client.chat.completions.create(
-        model="llama-3.3-70b-versatile",
-        messages=[{"role": "user", "content": prompt}],
-        max_tokens=2000,
-    )
-    return response.choices[0].message.content
+    start_time = time.time()
+    try:
+        client = groq_client.OpenAI(
+            base_url="https://api.groq.com/openai/v1",
+            api_key=os.getenv("GROQ_API_KEY"),
+        )
+        response = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=2000,
+        )
+        latency = time.time() - start_time
+        logger.info(f"LLM call succeeded - Provider: groq - Latency: {latency:.3f}s")
+        return response.choices[0].message.content
+    except Exception as e:
+        latency = time.time() - start_time
+        logger.error(f"LLM call failed - Provider: groq - Latency: {latency:.3f}s - Error: {e}")
+        raise
 
 
 def _call_lm_studio(prompt: str) -> str:
     """Call LM Studio local server as backup."""
-    client = OpenAI(
-        base_url=MODEL_CONFIG["backup_url"],
-        api_key="lm-studio",
-    )
-    response = client.chat.completions.create(
-        model=MODEL_CONFIG["backup_model"],
-        messages=[{"role": "user", "content": prompt}],
-        temperature=0.3,
-    )
-    return response.choices[0].message.content
+    start_time = time.time()
+    try:
+        client = OpenAI(
+            base_url=MODEL_CONFIG["backup_url"],
+            api_key="lm-studio",
+        )
+        response = client.chat.completions.create(
+            model=MODEL_CONFIG["backup_model"],
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.3,
+        )
+        latency = time.time() - start_time
+        logger.info(f"LLM call succeeded - Provider: lm_studio - Latency: {latency:.3f}s")
+        return response.choices[0].message.content
+    except Exception as e:
+        latency = time.time() - start_time
+        logger.error(f"LLM call failed - Provider: lm_studio - Latency: {latency:.3f}s - Error: {e}")
+        raise
+
+
+def _call_gemini(prompt: str) -> str:
+    """Call Gemini API, fall back to Groq then LM Studio on failure."""
+    try:
+        return _call_gemini_api(prompt)
+    except Exception as e:
+        logger.warning(f"Primary Gemini call failed: {e}. Falling back to Groq...")
+        try:
+            return _call_groq_fallback(prompt)
+        except Exception as groq_error:
+            logger.warning(f"Secondary Groq fallback failed: {groq_error}. Falling back to LM Studio...")
+            return _call_lm_studio(prompt)
 
 
 def extract_dispute_facts(dispute_description: str, form_data: dict) -> dict:
@@ -114,9 +144,13 @@ Return ONLY valid JSON, no explanation."""
     try:
         raw = _call_gemini(prompt)
         cleaned = _strip_json_fences(raw)
-        return json.loads(cleaned)
+        res = json.loads(cleaned)
+        if isinstance(res, dict):
+            res["generation_method"] = "live"
+            return res
+        raise ValueError("Response is not dict")
     except Exception as e:
-        print(f"extract_dispute_facts failed: {e}. Using fallback.")
+        logger.warning(f"extract_dispute_facts failed: {e}. Fallback triggered.")
         return {
             "trademark_nature": f"Registered trademark '{form_data.get('trademark_name', 'Unknown')}'",
             "dispute_summary": (
@@ -138,6 +172,7 @@ Return ONLY valid JSON, no explanation."""
             ),
             "affects_third_parties": form_data.get("affects_third_parties", False),
             "dispute_category": form_data.get("dispute_type", "infringement").lower().replace(" ", "_"),
+            "generation_method": "fallback"
         }
 
 
@@ -257,29 +292,30 @@ Example: ["Whether...", "Whether...", "Whether...", "Whether..."]"""
         cleaned = _strip_json_fences(raw)
         issues = json.loads(cleaned)
         if isinstance(issues, list) and len(issues) >= 4:
-            return issues[:4]
+            return issues[:4], "live"
         raise ValueError("Invalid issues format")
     except Exception as e:
-        print(f"frame_legal_issues failed: {e}. Using fallback.")
+        logger.warning(f"frame_legal_issues failed: {e}. Fallback triggered.")
         party_a = dispute.get("party_a", "the Claimant")
         party_b = dispute.get("party_b", "the Respondent")
         trademark = dispute.get("trademark_name", "the trademark")
         status = arbitrability_result.status if arbitrability_result else "Unknown"
 
         if status == "ARBITRABLE":
-            return [
+            fallback_issues = [
                 f"Whether the arbitral tribunal has jurisdiction to adjudicate the present dispute between {party_a} and {party_b} concerning the trademark '{trademark}' under the Arbitration and Conciliation Act, 1996?",
                 f"Whether {party_b} has infringed and/or violated the trademark rights of {party_a} in the mark '{trademark}' under Sections 29 and 30 of the Trade Marks Act, 1999?",
                 f"Whether {party_a} is entitled to injunctive relief, rendition of accounts, and/or damages against {party_b} for the alleged infringement of trademark '{trademark}'?",
                 f"Whether {party_a} is entitled to costs of the arbitration proceedings?",
             ]
         else:
-            return [
+            fallback_issues = [
                 f"Whether the mark used by {party_b} is deceptively similar to the registered trademark '{trademark}' of {party_a} under Section 29 of the Trade Marks Act, 1999 so as to cause confusion in the minds of consumers?",
                 f"Whether {party_b} has infringed the registered trademark rights of {party_a} in the mark '{trademark}' under Sections 29 and 30 of the Trade Marks Act, 1999 and/or is passing off its goods as those of {party_a}?",
                 f"Whether {party_a} is entitled to a permanent injunction restraining {party_b} from using the mark '{trademark}' or any deceptively similar mark under Section 135 of the Trade Marks Act, 1999?",
                 f"Whether {party_a} is entitled to damages and/or account of profits from {party_b} and if so to what quantum?",
             ]
+        return fallback_issues, "fallback"
 
 
 def identify_legal_principles(
@@ -340,10 +376,10 @@ Return 3-5 items. Return ONLY valid JSON, no explanation."""
         cleaned = _strip_json_fences(raw)
         principles = json.loads(cleaned)
         if isinstance(principles, list) and len(principles) >= 3:
-            return principles[:5]
+            return principles[:5], "live"
         raise ValueError("Invalid principles format")
     except Exception as e:
-        print(f"identify_legal_principles failed: {e}. Using fallback.")
+        logger.warning(f"identify_legal_principles failed: {e}. Fallback triggered.")
         principles = [
             {
                 "principle_name": "Right in Rem vs Right in Personam",
@@ -373,7 +409,7 @@ Return 3-5 items. Return ONLY valid JSON, no explanation."""
                 "application": "The present dispute arises from a contractual relationship, making it amenable to arbitration.",
             })
 
-        return principles
+        return principles, "fallback"
 
 
 def generate_award_framework(
@@ -521,10 +557,11 @@ Return ONLY valid JSON, no explanation."""
 
         # Validate structure
         if "jurisdiction_finding" in framework and "findings_on_issues" in framework:
+            framework["generation_method"] = "live"
             return framework
         raise ValueError("Invalid framework structure")
     except Exception as e:
-        print(f"generate_award_framework failed: {e}. Using fallback.")
+        logger.warning(f"generate_award_framework failed: {e}. Fallback triggered.")
         party_a = dispute.get("party_a", "the Claimant")
         party_b = dispute.get("party_b", "the Respondent")
         trademark = dispute.get("trademark_name", "the trademark")
@@ -560,7 +597,7 @@ Return ONLY valid JSON, no explanation."""
                 )
             else:
                 finding_options = [
-                    f"{party_b} IS liable for infringement of {party_a}'s trademark '{trademark}' under Section 29 of the Trade Marks Act, 1999.",
+                    f"{party_b} IS liable for infringement of {party_a}'s trademark '{trademark}' under Section 29 of the Trade Marks Act, 19_99.",
                     f"{party_b} is NOT liable for infringement and no cause of action is established against {party_b}.",
                 ]
                 applicable_law = (
@@ -634,6 +671,7 @@ Return ONLY valid JSON, no explanation."""
                 ),
             },
             "operative_portion_template": operative_template,
+            "generation_method": "fallback"
         }
 
 
@@ -759,12 +797,10 @@ Return ONLY valid JSON. No markdown. No explanation. No json fences. Plain text 
         result = json.loads(cleaned)
         if not isinstance(result, dict):
             raise ValueError("Master analysis returned non-dict")
-        for key in ["extracted_facts", "legal_issues", "statutory_provisions", "award_framework"]:
-            if key not in result:
-                raise ValueError(f"Missing key: {key}")
+        result["generation_method"] = "live"
         return result
     except Exception as e:
-        print(f"master_legal_analysis failed: {e}. Using fallback.")
+        logger.warning(f"master_legal_analysis failed: {e}. Fallback triggered.")
         fallback_facts = {
             "trademark_nature": f"Registered trademark '{trademark}'",
             "dispute_summary": (
@@ -795,8 +831,8 @@ Return ONLY valid JSON. No markdown. No explanation. No json fences. Plain text 
         else:
             fallback_issues = [
                 f"Whether the mark used by {party_b} is deceptively similar to the registered trademark '{trademark}' of {party_a} under Section 29 of the Trade Marks Act, 1999 so as to cause confusion in the minds of consumers?",
-                f"Whether {party_b} has infringed the registered trademark rights of {party_a} in the mark '{trademark}' under Sections 29 and 30 of the Trade Marks Act, 1999 and/or is passing off its goods as those of {party_a}?",
-                f"Whether {party_a} is entitled to a permanent injunction restraining {party_b} from using the mark '{trademark}' or any deceptively similar mark under Section 135 of the Trade Marks Act, 1999?",
+                f"Whether {party_b} has infringed the registered trademark rights of {party_a} in the mark '{trademark}' under Sections 29 and 30 of the Trade Marks Act, 19_99 and/or is passing off its goods as those of {party_a}?",
+                f"Whether {party_a} is entitled to a permanent injunction restraining {party_b} from using the mark '{trademark}' or any deceptively similar mark under Section 135 of the Trade Marks Act, 19_99?",
                 f"Whether {party_a} is entitled to damages and/or account of profits from {party_b} and if so to what quantum?",
             ]
 
@@ -857,4 +893,5 @@ Return ONLY valid JSON. No markdown. No explanation. No json fences. Plain text 
             "legal_issues": fallback_issues,
             "statutory_provisions": fallback_statutes,
             "award_framework": fallback_award,
+            "generation_method": "fallback"
         }

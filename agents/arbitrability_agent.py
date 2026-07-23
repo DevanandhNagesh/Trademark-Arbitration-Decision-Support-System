@@ -19,6 +19,7 @@ class ArbitrabilityResult:
     reason: str = ""
     recommendation: str = ""
     applicable_landmark: str = ""
+    narrative_warning: dict = field(default_factory=dict)
 
 
 def apply_booz_allen_test(dispute: dict) -> dict:
@@ -202,10 +203,74 @@ def apply_vidya_drolia_test(dispute: dict) -> dict:
     }
 
 
+def check_narrative_disagreement(dispute: dict) -> dict:
+    """Check for keywords in dispute_description that conflict with selected dispute_type."""
+    dispute_description = dispute.get("dispute_description", "").lower()
+    dispute_type = dispute.get("dispute_type", "").lower()
+
+    rem_keywords = ["registration", "cancellation", "rectification", "passing off"]
+    centralized_keywords = ["registration", "cancellation", "rectification", "opposition"]
+    excluded_keywords = ["criminal", "competition", "antitrust"]
+
+    # Combine in_rem and centralized since they represent same category of non-arbitrability
+    in_rem_central_keywords = list(set(rem_keywords + centralized_keywords))
+
+    # Check if dispute_type itself falls into any of these classifications
+    type_is_in_rem_central = any(kw in dispute_type for kw in in_rem_central_keywords)
+    type_is_excluded = any(kw in dispute_type for kw in excluded_keywords)
+
+    conflicting_keywords = []
+
+    # If dispute type is NOT classified as in_rem/central, check if description suggests it
+    if not type_is_in_rem_central:
+        for kw in in_rem_central_keywords:
+            if kw in dispute_description:
+                if kw not in conflicting_keywords:
+                    conflicting_keywords.append(kw)
+
+    # If dispute type is NOT classified as excluded, check if description suggests it
+    if not type_is_excluded:
+        for kw in excluded_keywords:
+            if kw in dispute_description:
+                if kw not in conflicting_keywords:
+                    conflicting_keywords.append(kw)
+
+    if conflicting_keywords:
+        suggested_concepts = []
+        has_rem_or_central = any(kw in conflicting_keywords for kw in in_rem_central_keywords)
+        has_excluded = any(kw in conflicting_keywords for kw in excluded_keywords)
+
+        if has_rem_or_central:
+            suggested_concepts.append("in rem or centralized adjudication matters")
+        if has_excluded:
+            suggested_concepts.append("statutorily excluded matters")
+
+        concepts_str = " and ".join(suggested_concepts)
+
+        message = (
+            f"The dispute description contains language suggesting {concepts_str} "
+            f"(specifically: {', '.join(f'\"{k}\"' for k in conflicting_keywords)}), "
+            f"which conflicts with the selected dispute type '{dispute.get('dispute_type', '')}'. "
+            f"Please verify this classification manually."
+        )
+        return {
+            "has_disagreement": True,
+            "conflicting_keywords": conflicting_keywords,
+            "message": message
+        }
+
+    return {
+        "has_disagreement": False,
+        "conflicting_keywords": [],
+        "message": ""
+    }
+
+
 def check_arbitrability(dispute: dict) -> ArbitrabilityResult:
     """Main arbitrability determination. Returns ArbitrabilityResult."""
     booz_allen_result = apply_booz_allen_test(dispute)
     vidya_drolia_result = apply_vidya_drolia_test(dispute)
+    narrative_warning = check_narrative_disagreement(dispute)
 
     has_arbitration_clause = dispute.get("has_arbitration_clause", False)
     dispute_type = dispute.get("dispute_type", "").lower()
@@ -303,4 +368,5 @@ def check_arbitrability(dispute: dict) -> ArbitrabilityResult:
         reason=reason,
         recommendation=recommendation,
         applicable_landmark=applicable_landmark,
+        narrative_warning=narrative_warning,
     )

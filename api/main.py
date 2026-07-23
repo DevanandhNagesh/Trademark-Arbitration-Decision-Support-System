@@ -9,12 +9,15 @@ sys.path.insert(0, PROJECT_ROOT)
 
 import pydantic_v1_compat  # noqa: F401 — must be before chromadb
 
-from fastapi import FastAPI, Form, HTTPException
+from fastapi import FastAPI, Form, HTTPException, Depends, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security.api_key import APIKeyHeader
 import uvicorn
+import time
 
-from config import OUTPUT_DIR
+from config import OUTPUT_DIR, EXPECTED_API_KEY, ALLOWED_ORIGINS
+from logging_config import logger
 from agents.arbitrability_agent import check_arbitrability
 from agents.landmark_retrieval_agent import retrieve_landmarks, analyze_landmark_applicability
 from agents.gemini_agents import (
@@ -37,14 +40,43 @@ app = FastAPI(
     version="1.0.0",
 )
 
-# Enable CORS for all origins
+# Enable CORS for allowed origins
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    response = await call_next(request)
+    process_time = (time.time() - start_time) * 1000
+    formatted_process_time = f"{process_time:.2f}ms"
+    logger.info(
+        f"Request - Method: {request.method} - Path: {request.url.path} - "
+        f"Status: {response.status_code} - Latency: {formatted_process_time}"
+    )
+    return response
+
+API_KEY_NAME = "X-API-Key"
+api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
+
+async def get_api_key(api_key: str = Depends(api_key_header)):
+    if not api_key:
+        raise HTTPException(
+            status_code=401,
+            detail="API Key is missing"
+        )
+    if api_key != EXPECTED_API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API Key"
+        )
+    return api_key
+
 
 
 @app.get("/")
@@ -56,7 +88,7 @@ async def serve_frontend():
     return FileResponse(frontend_path, media_type="text/html")
 
 
-@app.post("/analyze")
+@app.post("/analyze", dependencies=[Depends(get_api_key)])
 async def analyze_dispute(
     party_a: str = Form(...),
     party_b: str = Form(...),
@@ -100,12 +132,18 @@ async def analyze_dispute(
             for lm in landmark_matches
         ]
 
-        # 4. Master legal analysis (Gemini) — single call
         master_result = master_legal_analysis(
             dispute,
             arbitrability_result,
             landmark_matches,
         )
+        master_method = master_result.get("generation_method", "live")
+        generation_methods = {
+            "facts": master_method,
+            "issues": master_method,
+            "principles": master_method,
+            "framework": master_method,
+        }
         extracted_facts = master_result.get("extracted_facts") or {}
         issues = master_result.get("legal_issues") or []
         legal_principles = master_result.get("statutory_provisions") or []
@@ -131,6 +169,7 @@ async def analyze_dispute(
             legal_principles,
             award_framework,
             adversarial_analysis,
+            generation_methods=generation_methods,
         )
 
         filename = os.path.basename(filepath)
@@ -166,19 +205,20 @@ async def analyze_dispute(
                 "issues_count": len(issues),
                 "adversarial_summary": adversarial_summary,
                 "adversarial_preview": adversarial_preview,
+                "narrative_warning": arbitrability_result.narrative_warning,
+                "generation_method": master_method,
             }
         )
 
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        logger.exception(f"Unhandled exception in /analyze: {e}")
         return JSONResponse(
             status_code=500,
             content={"status": "error", "detail": str(e)},
         )
 
 
-@app.get("/find-lawyers")
+@app.get("/find-lawyers", dependencies=[Depends(get_api_key)])
 async def find_lawyers_endpoint(
     city: str,
     dispute_type: str = "trademark",
@@ -201,7 +241,7 @@ async def find_lawyers_endpoint(
         }
 
 
-@app.get("/find-lawyers-by-location")
+@app.get("/find-lawyers-by-location", dependencies=[Depends(get_api_key)])
 async def find_lawyers_by_location_endpoint(
     lat: float,
     lng: float,
@@ -226,7 +266,7 @@ async def find_lawyers_by_location_endpoint(
         }
 
 
-@app.get("/download/{filename}")
+@app.get("/download/{filename}", dependencies=[Depends(get_api_key)])
 async def download_report(filename: str):
     """Download a generated DSS report."""
     # Sanitize filename to prevent path traversal
@@ -244,4 +284,5 @@ async def download_report(filename: str):
 
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    reload_flag = os.getenv("ENV", "development") == "development"
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=reload_flag)

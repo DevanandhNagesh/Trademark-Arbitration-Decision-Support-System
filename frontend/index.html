@@ -894,6 +894,40 @@
                 grid-template-columns: 1fr;
             }
         }
+        .warning-banner {
+            margin: 16px auto 0;
+            padding: 16px;
+            background: rgba(204, 102, 0, 0.1);
+            border: 1px solid rgba(204, 102, 0, 0.3);
+            border-left: 4px solid #CC6600;
+            border-radius: 8px;
+            text-align: left;
+            max-width: 800px;
+        }
+        .warning-banner .warning-title {
+            font-weight: 600;
+            color: #E8C96A;
+            font-size: 14px;
+            margin-bottom: 4px;
+        }
+        .warning-banner .warning-body {
+            color: var(--text-primary);
+            font-size: 13px;
+            line-height: 1.5;
+        }
+        .fallback-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            margin-top: 12px;
+            padding: 6px 12px;
+            background: rgba(204, 102, 0, 0.1);
+            border: 1px solid rgba(204, 102, 0, 0.3);
+            border-radius: 6px;
+            color: #CC6600;
+            font-size: 12px;
+            font-weight: 500;
+        }
     </style>
 </head>
 <body>
@@ -1045,6 +1079,13 @@
             <section class="card results" id="resultsCard">
                 <div style="text-align: center;">
                     <div class="status-badge" id="statusBadge">ARBITRABLE</div>
+                    <div id="fallbackWarningBadge" class="fallback-badge" style="display: none;">
+                        ⚠ Fallback Logic Used
+                    </div>
+                </div>
+                <div id="narrativeWarningBanner" class="warning-banner" style="display: none;">
+                    <div class="warning-title">⚠️ Narrative Classification Warning</div>
+                    <div id="narrativeWarningMessage" class="warning-body"></div>
                 </div>
                 <div class="results-grid">
                     <div>
@@ -1175,6 +1216,22 @@
 
     <script>
         (function() {
+            function getApiKey() {
+                let key = localStorage.getItem("X_API_KEY");
+                if (!key) {
+                    key = prompt("Please enter the X-API-Key to authenticate requests:");
+                    if (key) {
+                        localStorage.setItem("X_API_KEY", key);
+                    }
+                }
+                return key || "";
+            }
+
+            function handleUnauthorized() {
+                localStorage.removeItem("X_API_KEY");
+                alert("Unauthorized: The API Key is missing or invalid. Please check the key and try again.");
+            }
+
             const form = document.getElementById("disputeForm");
             const submitBtn = document.getElementById("submitBtn");
             const loadingOverlay = document.getElementById("loadingOverlay");
@@ -1390,6 +1447,14 @@
                 if (summaryBar) {
                     summaryBar.style.display = "none";
                 }
+                const warningBanner = document.getElementById("narrativeWarningBanner");
+                if (warningBanner) {
+                    warningBanner.style.display = "none";
+                }
+                const fallbackBadge = document.getElementById("fallbackWarningBadge");
+                if (fallbackBadge) {
+                    fallbackBadge.style.display = "none";
+                }
                 resultsCard.classList.remove("active");
                 form.reset();
                 rightSourceInput.value = "";
@@ -1407,6 +1472,45 @@
 
             newAnalysisBtn.addEventListener("click", () => {
                 resetAll();
+            });
+
+            downloadBtn.addEventListener("click", async (e) => {
+                e.preventDefault();
+                const url = downloadBtn.getAttribute("href") || downloadBtn.href;
+                if (!url || url === "#" || url === "javascript:void(0)") return;
+
+                downloadBtn.style.pointerEvents = "none";
+                const originalHTML = downloadBtn.innerHTML;
+                downloadBtn.innerHTML = "Downloading...";
+
+                try {
+                    const response = await fetch(url, {
+                        headers: {
+                            "X-API-Key": getApiKey()
+                        }
+                    });
+                    if (response.status === 401) {
+                        handleUnauthorized();
+                        return;
+                    }
+                    if (!response.ok) {
+                        throw new Error("Failed to download file");
+                    }
+                    const blob = await response.blob();
+                    const objectUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement("a");
+                    a.href = objectUrl;
+                    a.download = downloadBtn.getAttribute("download") || "dss_report.docx";
+                    document.body.appendChild(a);
+                    a.click();
+                    a.remove();
+                    window.URL.revokeObjectURL(objectUrl);
+                } catch (err) {
+                    alert(err.message || "Download failed");
+                } finally {
+                    downloadBtn.style.pointerEvents = "auto";
+                    downloadBtn.innerHTML = originalHTML;
+                }
             });
 
             function updatePreview(listEl, items) {
@@ -1537,8 +1641,17 @@
                     var res = await fetch(
                         '/find-lawyers?city='
                         + encodeURIComponent(city)
-                        + '&dispute_type=trademark'
+                        + '&dispute_type=trademark',
+                        {
+                            headers: {
+                                'X-API-Key': getApiKey()
+                            }
+                        }
                     );
+                    if (res.status === 401) {
+                        handleUnauthorized();
+                        return;
+                    }
                     var data = await res.json();
                     renderLawyerResults(data, city);
                 } catch (err) {
@@ -1600,8 +1713,17 @@
                                 '/find-lawyers-by-location'
                                 + '?lat=' + lat
                                 + '&lng=' + lng
-                                + '&dispute_type=trademark'
+                                + '&dispute_type=trademark',
+                                {
+                                    headers: {
+                                        'X-API-Key': getApiKey()
+                                    }
+                                }
                             );
+                            if (res.status === 401) {
+                                handleUnauthorized();
+                                return;
+                            }
                             var data = await res.json();
                             renderLawyerResults(
                                 data, 'your current location');
@@ -1710,8 +1832,15 @@
 
                     const response = await fetch("/analyze", {
                         method: "POST",
-                        body: formData
+                        body: formData,
+                        headers: {
+                            "X-API-Key": getApiKey()
+                        }
                     });
+                    if (response.status === 401) {
+                        handleUnauthorized();
+                        throw new Error("Unauthorized: Invalid API Key");
+                    }
                     const data = await response.json();
 
                     if (!response.ok || data.status !== "success") {
@@ -1728,6 +1857,22 @@
                         statusBadge.classList.add("arbitrable");
                     } else {
                         statusBadge.classList.add("not-arbitrable");
+                    }
+
+                    const warningBanner = document.getElementById("narrativeWarningBanner");
+                    const warningMessage = document.getElementById("narrativeWarningMessage");
+                    if (data.narrative_warning && data.narrative_warning.has_disagreement) {
+                        warningMessage.textContent = data.narrative_warning.message;
+                        warningBanner.style.display = "block";
+                    } else {
+                        warningBanner.style.display = "none";
+                    }
+
+                    const fallbackBadge = document.getElementById("fallbackWarningBadge");
+                    if (data.generation_method === "fallback") {
+                        fallbackBadge.style.display = "inline-flex";
+                    } else {
+                        fallbackBadge.style.display = "none";
                     }
 
                     // ── Lawyer finder context message logic ────────────────

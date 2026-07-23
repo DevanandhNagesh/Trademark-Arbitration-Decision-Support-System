@@ -1,0 +1,12 @@
+{
+  "party_a": "Starbucks Corporation",
+  "party_b": "Sardarbuksh Coffee and Eatery",
+  "trademark_name": "STARBUCKS",
+  "dispute_type": "Brand Similarity",
+  "has_contract": false,
+  "has_arbitration_clause": false,
+  "right_source": "statute",
+  "affects_third_parties": true,
+  "dispute_description": "Starbucks Corporation is the registered owner of the trademark STARBUCKS and the circular green mermaid logo. Sardarbuksh Coffee and Eatery has launched coffee outlets in India under the name SARDARBUKSH with a deceptively similar circular logo, infringing the registered mark of Starbucks. Starbucks seeks a permanent injunction and damages.",
+  "expected_arbitrable": false
+}

@@ -1,0 +1,12 @@
+{
+  "party_a": "Subway International BV",
+  "party_b": "Mumbai Sandwich Masters Pvt Ltd",
+  "trademark_name": "SUBWAY",
+  "dispute_type": "Brand Similarity",
+  "has_contract": false,
+  "has_arbitration_clause": false,
+  "right_source": "statute",
+  "affects_third_parties": true,
+  "dispute_description": "Subway International BV operates quick-service outlets under the registered trademark SUBWAY. Mumbai Sandwich Masters Pvt Ltd opened outlets using a green-and-yellow color scheme, arrow-styled logo, and layout deceptively similar to Subway's trade dress. Subway seeks an injunction to restrain trade dress infringement.",
+  "expected_arbitrable": false
+}

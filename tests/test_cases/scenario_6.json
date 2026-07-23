@@ -1,0 +1,12 @@
+{
+  "party_a": "BluePeak Roasters Pvt Ltd",
+  "party_b": "BluePeak Roasters Pvt Ltd",
+  "trademark_name": "BLUEPEAK",
+  "dispute_type": "License Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "BluePeak Roasters Pvt Ltd (Claimant) licensed the trademark BLUEPEAK to a joint venture partner (Respondent) under a Trademark License Agreement containing a valid arbitration clause. A dispute arose regarding the non-payment of royalty fees and unauthorized sub-licensing of the BLUEPEAK mark in violation of the contract terms. The Claimant seeks payment of outstanding royalties and termination of the license.",
+  "expected_arbitrable": true
+}

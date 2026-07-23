@@ -89,6 +89,27 @@ def _add_bordered_paragraph(doc, text: str, italic: bool = False):
     return p
 
 
+def _add_fallback_warning(doc):
+    """Add a bordered fallback warning paragraph."""
+    p = doc.add_paragraph()
+    run = p.add_run("⚠ Generated via fallback logic — please verify this section manually")
+    run.italic = True
+    run.font.size = Pt(10)
+    run.font.color.rgb = ORANGE
+    pPr = p._p.get_or_add_pPr()
+    pBdr = parse_xml(
+        f'<w:pBdr {nsdecls("w")}>'
+        f'<w:top w:val="single" w:sz="6" w:space="2" w:color="CC6600"/>'
+        f'<w:left w:val="single" w:sz="6" w:space="2" w:color="CC6600"/>'
+        f'<w:bottom w:val="single" w:sz="6" w:space="2" w:color="CC6600"/>'
+        f'<w:right w:val="single" w:sz="6" w:space="2" w:color="CC6600"/>'
+        f'</w:pBdr>'
+    )
+    pPr.append(pBdr)
+    p.paragraph_format.space_after = Pt(8)
+    return p
+
+
 def _format_option_with_statute(option_text: str, applicable_law: str) -> str:
     """Ensure finding options include statute anchor text."""
     if not option_text:
@@ -128,6 +149,7 @@ def generate_dss_report(
     legal_principles: list,
     award_framework: dict,
     adversarial_analysis: dict = None,
+    generation_methods: dict = None,
 ) -> str:
     """Generate the full DSS Word document report. Returns filepath."""
     doc = Document()
@@ -173,6 +195,32 @@ def generate_dss_report(
 
     _add_paragraph(doc, status_text, bold=True, color=status_color, size=16,
                    alignment=WD_ALIGN_PARAGRAPH.CENTER)
+
+    # Check for narrative classification warning
+    warning_info = getattr(arbitrability_result, "narrative_warning", None)
+    if warning_info and warning_info.get("has_disagreement", False):
+        msg = warning_info.get("message", "")
+        p = doc.add_paragraph()
+        run_title = p.add_run("⚠️ WARNING: NARRATIVE CLASSIFICATION DISAGREEMENT\n")
+        run_title.bold = True
+        run_title.font.color.rgb = ORANGE
+        run_title.font.size = Pt(11)
+
+        run_msg = p.add_run(msg)
+        run_msg.font.size = Pt(10.5)
+        run_msg.italic = True
+
+        pPr = p._p.get_or_add_pPr()
+        pBdr = parse_xml(
+            f'<w:pBdr {nsdecls("w")}>'
+            f'<w:top w:val="single" w:sz="12" w:space="4" w:color="CC6600"/>'
+            f'<w:left w:val="single" w:sz="12" w:space="4" w:color="CC6600"/>'
+            f'<w:bottom w:val="single" w:sz="12" w:space="4" w:color="CC6600"/>'
+            f'<w:right w:val="single" w:sz="12" w:space="4" w:color="CC6600"/>'
+            f'</w:pBdr>'
+        )
+        pPr.append(pBdr)
+        p.paragraph_format.space_after = Pt(12)
 
     # Booz Allen Test Table
     booz = arbitrability_result.booz_allen_test if arbitrability_result else {}
@@ -330,6 +378,8 @@ def generate_dss_report(
     # SECTION III — ISSUES FOR DETERMINATION
     # ════════════════════════════════════════════════════════════════
     _add_heading(doc, "SECTION III — ISSUES FOR DETERMINATION", level=1, size=14)
+    if generation_methods and generation_methods.get("issues") == "fallback":
+        _add_fallback_warning(doc)
 
     for i, issue in enumerate(issues):
         _add_paragraph(doc, f"Issue {i + 1}: {issue}", bold=True, size=11)
@@ -341,6 +391,8 @@ def generate_dss_report(
     # SECTION IV — APPLICABLE STATUTORY PROVISIONS AND JUDICIAL INTERPRETATIONS
     # ════════════════════════════════════════════════════════════════
     _add_heading(doc, "SECTION IV — APPLICABLE STATUTORY PROVISIONS AND JUDICIAL INTERPRETATIONS", level=1, size=14)
+    if generation_methods and generation_methods.get("principles") == "fallback":
+        _add_fallback_warning(doc)
 
     for idx, principle in enumerate(legal_principles):
         p_name = principle.get("principle_name", f"Principle {idx + 1}")
@@ -377,6 +429,8 @@ def generate_dss_report(
     # SECTION V — AWARD FRAMEWORK
     # ════════════════════════════════════════════════════════════════
     _add_heading(doc, "SECTION V — AWARD FRAMEWORK", level=1, size=14)
+    if generation_methods and generation_methods.get("framework") == "fallback":
+        _add_fallback_warning(doc)
 
     # A. JURISDICTION
     _add_heading(doc, "A. JURISDICTION", level=2, size=12)

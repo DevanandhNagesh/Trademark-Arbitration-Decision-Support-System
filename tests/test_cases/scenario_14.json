@@ -1,0 +1,12 @@
+{
+  "party_a": "Mondelez India Foods Pvt Ltd",
+  "party_b": "Mondelez India Foods Pvt Ltd",
+  "trademark_name": "CADBURY",
+  "dispute_type": "License Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "A corporate licensing dispute between Mondelez India Foods Pvt Ltd and its sub-licensee regarding the scope of the Cadbury trademark usage for new confectionery categories. The licensing contract contains an arbitration clause. The Claimant seeks declaration of rights and injunction against unauthorized product launches.",
+  "expected_arbitrable": true
+}

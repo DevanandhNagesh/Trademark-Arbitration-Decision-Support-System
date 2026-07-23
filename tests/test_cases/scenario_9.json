@@ -1,0 +1,12 @@
+{
+  "party_a": "Frooti Beverages Pvt Ltd",
+  "party_b": "Frooti Distributors Ltd",
+  "trademark_name": "FROOTI",
+  "dispute_type": "License Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "Frooti Beverages Pvt Ltd granted distribution rights for their trademark FROOTI to Frooti Distributors Ltd under a Distribution Agreement containing an arbitration clause. The distributor violated the territorial restrictions by selling the beverages outside the designated area. The Claimant seeks an injunction and damages for breach of contract.",
+  "expected_arbitrable": true
+}

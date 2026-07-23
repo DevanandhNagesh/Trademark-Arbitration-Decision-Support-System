@@ -1,0 +1,12 @@
+{
+  "party_a": "Zandu Pharmaceutical Works Ltd",
+  "party_b": "Zandu Wellness Products Pvt Ltd",
+  "trademark_name": "ZANDU",
+  "dispute_type": "Trademark Infringement",
+  "has_contract": false,
+  "has_arbitration_clause": false,
+  "right_source": "statute",
+  "affects_third_parties": true,
+  "dispute_description": "Zandu Pharmaceutical Works Ltd is the proprietor of the famous mark ZANDU for ayurvedic products. Zandu Wellness Products Pvt Ltd, an unrelated entity, has launched wellness supplements under the same mark ZANDU, creating consumer confusion. The Claimant seeks a permanent injunction and damages.",
+  "expected_arbitrable": false
+}

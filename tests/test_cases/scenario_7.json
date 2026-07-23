@@ -1,0 +1,12 @@
+{
+  "party_a": "Chai Point Beverages Pvt Ltd",
+  "party_b": "Chai Point Franchise Partner",
+  "trademark_name": "CHAI POINT",
+  "dispute_type": "License Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "Chai Point Beverages Pvt Ltd entered into a Franchise Agreement with Chai Point Franchise Partner H. The partner violated franchise standards by sourcing raw materials from unapproved vendors and using the trademark CHAI POINT on unauthorized menu items. Chai Point seeks termination of the franchise agreement and injunction against further use of the mark under the agreement's arbitration clause.",
+  "expected_arbitrable": true
+}

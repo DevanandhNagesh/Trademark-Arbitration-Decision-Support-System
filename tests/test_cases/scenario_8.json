@@ -1,0 +1,12 @@
+{
+  "party_a": "FreshBrew Coffee Pvt Ltd",
+  "party_b": "FreshBreeze Cafe Pvt Ltd",
+  "trademark_name": "FRESHBREW",
+  "dispute_type": "Brand Similarity",
+  "has_contract": false,
+  "has_arbitration_clause": false,
+  "right_source": "statute",
+  "affects_third_parties": true,
+  "dispute_description": "FreshBrew Coffee Pvt Ltd operates a chain of premium coffee outlets under the registered trademark FRESHBREW. FreshBreeze Cafe Pvt Ltd opened a cafe under the name FRESHBREEZE with similar interior design, menu layout, and color themes, causing trade dress infringement and passing off. FreshBrew seeks a permanent injunction restraining the respondent.",
+  "expected_arbitrable": false
+}

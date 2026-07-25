@@ -249,7 +249,7 @@ def check_narrative_disagreement(dispute: dict) -> dict:
 
         message = (
             f"The dispute description contains language suggesting {concepts_str} "
-            f"(specifically: {', '.join(f'\"{k}\"' for k in conflicting_keywords)}), "
+            f"(specifically: {', '.join(f'"{k}"' for k in conflicting_keywords)}), "
             f"which conflicts with the selected dispute type '{dispute.get('dispute_type', '')}'. "
             f"Please verify this classification manually."
         )

@@ -247,9 +247,10 @@ def check_narrative_disagreement(dispute: dict) -> dict:
 
         concepts_str = " and ".join(suggested_concepts)
 
+        conflicting_keywords_str = ", ".join(f'"{k}"' for k in conflicting_keywords)
         message = (
             f"The dispute description contains language suggesting {concepts_str} "
-            f"(specifically: {', '.join(f'"{k}"' for k in conflicting_keywords)}), "
+            f"(specifically: {conflicting_keywords_str}), "
             f"which conflicts with the selected dispute type '{dispute.get('dispute_type', '')}'. "
             f"Please verify this classification manually."
         )

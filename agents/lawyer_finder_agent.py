@@ -1,6 +1,7 @@
 import os
 import requests
 from dotenv import load_dotenv
+from logging_config import logger
 
 PROJECT_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 load_dotenv(os.path.join(PROJECT_ROOT, ".env"))
@@ -38,7 +39,8 @@ def geocode_city(city: str) -> tuple:
             return (None, None)
 
         return (float(lat), float(lng))
-    except Exception:
+    except Exception as e:
+        logger.exception(f"Exception in geocode_city for {city}: {e}")
         return (None, None)
 
 
@@ -80,7 +82,8 @@ def search_trademark_lawyers(lat: float, lng: float, radius_km: int = 10) -> lis
             )
 
         return lawyers
-    except Exception:
+    except Exception as e:
+        logger.exception(f"Exception in search_trademark_lawyers at ({lat}, {lng}): {e}")
         return []
 
 
@@ -139,13 +142,14 @@ def find_nearby_lawyers(city: str, dispute_type: str = "trademark") -> dict:
             "fallback": False,
             "message": message,
         }
-    except Exception:
+    except Exception as e:
+        logger.exception(f"Exception in find_nearby_lawyers for {city}: {e}")
         return {
             "success": False,
             "city": city,
             "lawyers": [],
             "count": 0,
-            "message": "Search failed. Please try again.",
+            "message": f"Search failed: {str(e)}",
         }
 
 
@@ -166,10 +170,11 @@ def find_lawyers_by_coordinates(lat: float, lng: float, dispute_type: str = "tra
             "count": len(lawyers),
             "message": message,
         }
-    except Exception:
+    except Exception as e:
+        logger.exception(f"Exception in find_lawyers_by_coordinates at ({lat}, {lng}): {e}")
         return {
             "success": False,
             "lawyers": [],
             "count": 0,
-            "message": "Location search failed. Please enter your city below.",
+            "message": f"Location search failed: {str(e)}",
         }

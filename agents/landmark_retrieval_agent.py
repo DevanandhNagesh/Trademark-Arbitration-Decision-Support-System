@@ -30,6 +30,7 @@ from config import (
     IKANOON_API_KEY,
     LANDMARK_CASES,
 )
+from logging_config import logger
 
 # ---------------------------------------------------------------------------
 # Data model
@@ -185,7 +186,8 @@ def _fetch_ikanoon_snippet(doc_id: str) -> str:
         full_text = re.sub(r"<[^>]+>", " ", full_text)
         full_text = re.sub(r"\s+", " ", full_text).strip()
         return full_text[:500]
-    except Exception:
+    except Exception as e:
+        logger.warning(f"Failed to fetch iKanoon snippet for doc {doc_id}: {e}")
         return ""
 
 
@@ -411,18 +413,18 @@ def retrieve_landmarks(
         matches = _retrieve_via_ikanoon(dispute_description, n_results)
         seen_case_keys = {m.case_key for m in matches}
         ikanoon_ok = True
-        print(f"[landmark_retrieval] iKanoon returned {len(matches)} results.")
+        logger.info(f"[landmark_retrieval] iKanoon returned {len(matches)} results.")
     except Exception as ik_err:
-        print(f"[landmark_retrieval] iKanoon failed: {ik_err}. Trying ChromaDB...")
+        logger.warning(f"[landmark_retrieval] iKanoon failed: {ik_err}. Trying ChromaDB...")
 
     # ── 2. Secondary: ChromaDB ───────────────────────────────────────
     if not ikanoon_ok:
         try:
             matches = _retrieve_via_chromadb(dispute_description, n_results)
             seen_case_keys = {m.case_key for m in matches}
-            print(f"[landmark_retrieval] ChromaDB returned {len(matches)} results.")
+            logger.info(f"[landmark_retrieval] ChromaDB returned {len(matches)} results.")
         except Exception as chroma_err:
-            print(f"[landmark_retrieval] ChromaDB failed: {chroma_err}. Using registry fallback.")
+            logger.warning(f"[landmark_retrieval] ChromaDB failed: {chroma_err}. Using registry fallback.")
 
     # ── 3. Supplement if still below n_results ───────────────────────
     if len(matches) < n_results:

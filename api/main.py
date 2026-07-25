@@ -12,6 +12,7 @@ import pydantic_v1_compat  # noqa: F401 — must be before chromadb
 from fastapi import FastAPI, Form, HTTPException, Depends, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 import uvicorn
 import time
 
@@ -51,14 +52,23 @@ app.add_middleware(
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     start_time = time.time()
-    response = await call_next(request)
-    process_time = (time.time() - start_time) * 1000
-    formatted_process_time = f"{process_time:.2f}ms"
-    logger.info(
-        f"Request - Method: {request.method} - Path: {request.url.path} - "
-        f"Status: {response.status_code} - Latency: {formatted_process_time}"
-    )
-    return response
+    try:
+        response = await call_next(request)
+        process_time = (time.time() - start_time) * 1000
+        formatted_process_time = f"{process_time:.2f}ms"
+        logger.info(
+            f"Request - Method: {request.method} - Path: {request.url.path} - "
+            f"Status: {response.status_code} - Latency: {formatted_process_time}"
+        )
+        return response
+    except Exception as e:
+        process_time = (time.time() - start_time) * 1000
+        formatted_process_time = f"{process_time:.2f}ms"
+        logger.exception(
+            f"Request Failed - Method: {request.method} - Path: {request.url.path} - "
+            f"Error: {str(e)} - Latency: {formatted_process_time}"
+        )
+        raise
 
 @app.get("/")
 async def serve_frontend():
@@ -138,6 +148,8 @@ async def analyze_dispute(
             landmark_matches,
             legal_principles,
         )
+        adv_method = adversarial_analysis.get("generation_method", "live")
+        generation_methods["adversarial"] = adv_method
 
         # 9. Generate Word document report
         filepath = generate_dss_report(
@@ -187,7 +199,7 @@ async def analyze_dispute(
                 "adversarial_summary": adversarial_summary,
                 "adversarial_preview": adversarial_preview,
                 "narrative_warning": arbitrability_result.narrative_warning,
-                "generation_method": master_method,
+                "generation_method": "fallback" if (master_method == "fallback" or adv_method == "fallback") else "live",
             }
         )
 
@@ -262,6 +274,9 @@ async def download_report(filename: str):
         media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
         headers={"Content-Disposition": f'attachment; filename="{safe_filename}"'},
     )
+
+
+app.mount("/", StaticFiles(directory=os.path.join(PROJECT_ROOT, "frontend")), name="frontend")
 
 
 if __name__ == "__main__":

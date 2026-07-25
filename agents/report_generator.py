@@ -14,6 +14,7 @@ from docx.oxml.ns import qn, nsdecls
 from docx.oxml import parse_xml
 
 from config import OUTPUT_DIR
+from logging_config import logger
 
 # ── Color Scheme ────────────────────────────────────────────────────
 NAVY = RGBColor(27, 58, 107)
@@ -511,6 +512,8 @@ def generate_dss_report(
         _add_horizontal_rule(doc)
         _add_heading(doc, "SECTION VI — ADVERSARIAL LEGAL ANALYSIS", level=1, size=14)
         _add_horizontal_rule(doc)
+        if generation_methods and generation_methods.get("adversarial") == "fallback":
+            _add_fallback_warning(doc)
 
         # A. LAW IN FAVOUR OF CLAIMANT
         _add_heading(doc, "A. LAW IN FAVOUR OF CLAIMANT", level=2, size=12)
@@ -637,5 +640,5 @@ def generate_dss_report(
     filepath = os.path.join(OUTPUT_DIR, filename)
 
     doc.save(filepath)
-    print(f"Report saved: {filepath}")
+    logger.info(f"Report saved: {filepath}")
     return filepath

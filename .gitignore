@@ -1,7 +1,7 @@
 ### Secrets and env files
 .env
 .env.*
-!.env.template
+.env.template
 
 ### Python
 __pycache__/

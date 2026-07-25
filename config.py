@@ -7,8 +7,8 @@ load_dotenv()
 MODEL_CONFIG = {
     "primary": "gemini-2.5-flash",
     "lite": "gemini-2.5-flash-lite",
-    "backup_url": "http://localhost:1234/v1",
-    "backup_model": "deepseek-r1-7b",
+    "backup_url": os.getenv("BACKUP_LLM_URL", "http://localhost:1234/v1"),
+    "backup_model": os.getenv("BACKUP_LLM_MODEL", "deepseek-r1-7b"),
 }
 
 GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")

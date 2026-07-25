@@ -10,6 +10,7 @@ import google.generativeai as genai
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from config import GEMINI_API_KEY, MODEL_CONFIG
+from logging_config import logger
 
 load_dotenv()
 
@@ -156,18 +157,19 @@ EXAMPLE OUTPUT FORMAT — follow this structure exactly for every entry in every
     try:
         model = genai.GenerativeModel(MODEL_CONFIG["primary"])
         response = model.generate_content(prompt)
-        print("ADVERSARIAL RAW RESPONSE:", response.text[:500])
+        logger.info(f"ADVERSARIAL RAW RESPONSE: {response.text[:500]}")
         cleaned = _strip_json_fences(response.text)
         result = json.loads(cleaned)
         if not result.get("law_for_claimant") or len(result.get("law_for_claimant", [])) == 0:
-          print("WARNING: law_for_claimant empty — retrying once")
-          response = model.generate_content(prompt)
-          text = response.text.strip()
-          text = text.replace("```json", "").replace("```", "").strip()
-          result = json.loads(text)
+            logger.warning("WARNING: law_for_claimant empty — retrying once")
+            response = model.generate_content(prompt)
+            text = response.text.strip()
+            text = text.replace("```json", "").replace("```", "").strip()
+            result = json.loads(text)
+        result["generation_method"] = "live"
         return result
     except Exception as e:
-        print(f"generate_adversarial_analysis failed: {e}. Using fallback.")
+        logger.warning(f"generate_adversarial_analysis failed: {e}. Using fallback.")
         return {
             "law_for_claimant": [],
             "law_against_claimant": [],
@@ -176,4 +178,5 @@ EXAMPLE OUTPUT FORMAT — follow this structure exactly for every entry in every
                 "Adversarial analysis is unavailable. Please review applicable statutes and case law "
                 "manually for the claimant's position in this dispute."
             ),
+            "generation_method": "fallback"
         }

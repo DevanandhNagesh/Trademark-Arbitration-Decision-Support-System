@@ -16,7 +16,7 @@
             --accent-gold-light: #E8C96A;
             --text-primary: #F0F4FF;
             --text-secondary: #8892A4;
-            --text-muted: #4A5568;
+            --text-muted: #7C8BA1;
             --green: #10B981;
             --red: #EF4444;
             --blue-accent: #3B82F6;
@@ -928,6 +928,40 @@
             font-size: 12px;
             font-weight: 500;
         }
+
+        /* Screen reader utility class */
+        .sr-only {
+            position: absolute;
+            width: 1px;
+            height: 1px;
+            padding: 0;
+            margin: -1px;
+            overflow: hidden;
+            clip: rect(0, 0, 0, 0);
+            white-space: nowrap;
+            border: 0;
+        }
+
+        /* Visible focus states for keyboard navigation */
+        button:focus,
+        input:focus,
+        select:focus,
+        textarea:focus,
+        a:focus {
+            outline: 2px solid var(--accent-gold);
+            outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.4);
+        }
+
+        button:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        a:focus-visible {
+            outline: 2px solid var(--accent-gold);
+            outline-offset: 2px;
+            box-shadow: 0 0 0 4px rgba(201, 168, 76, 0.4);
+        }
     </style>
 </head>
 <body>
@@ -984,12 +1018,12 @@
         <main class="main">
             <div class="loading-overlay" id="loadingOverlay">
                 <div class="ring"></div>
-                <div class="loading-text" id="loadingText"></div>
+                <div class="loading-text" id="loadingText" role="alert" aria-live="polite"></div>
             </div>
 
             <div class="topbar">
                 <div class="title">Trademark Arbitration Decision Support System</div>
-                <button class="new-btn" id="newAnalysisBtn">New Analysis</button>
+                <button class="new-btn" id="newAnalysisBtn" aria-label="Start new dispute analysis">New Analysis</button>
             </div>
 
             <section class="card" id="formCard">
@@ -998,20 +1032,20 @@
                 <form id="disputeForm" novalidate>
                     <div class="grid">
                         <div class="form-group">
-                            <label>Party A (Claimant)</label>
-                            <input type="text" name="party_a" id="partyA" required placeholder="FreshBrew Coffee Pvt Ltd" />
+                            <label for="partyA">Party A (Claimant)</label>
+                            <input type="text" name="party_a" id="partyA" required placeholder="FreshBrew Coffee Pvt Ltd" aria-label="Party A, Claimant" />
                         </div>
                         <div class="form-group">
-                            <label>Party B (Respondent)</label>
-                            <input type="text" name="party_b" id="partyB" required placeholder="FreshBreeze Cafe Pvt Ltd" />
+                            <label for="partyB">Party B (Respondent)</label>
+                            <input type="text" name="party_b" id="partyB" required placeholder="FreshBreeze Cafe Pvt Ltd" aria-label="Party B, Respondent" />
                         </div>
                         <div class="form-group">
-                            <label>Trademark Name in Dispute</label>
-                            <input type="text" name="trademark_name" id="trademarkName" required placeholder="FRESHBREW" />
+                            <label for="trademarkName">Trademark Name in Dispute</label>
+                            <input type="text" name="trademark_name" id="trademarkName" required placeholder="FRESHBREW" aria-label="Trademark Name in Dispute" />
                         </div>
                         <div class="form-group">
-                            <label>Nature of Dispute</label>
-                            <select name="dispute_type" id="disputeType" required>
+                            <label for="disputeType">Nature of Dispute</label>
+                            <select name="dispute_type" id="disputeType" required aria-label="Nature of Dispute">
                                 <option value="">Select dispute type</option>
                                 <option value="Trademark Infringement">Trademark Infringement</option>
                                 <option value="License Dispute">License Dispute</option>
@@ -1023,49 +1057,49 @@
                     </div>
 
                     <div class="form-group" style="margin-top: 12px;">
-                        <label>Source of Right</label>
-                        <div class="toggle-group" data-toggle="right_source">
-                            <button type="button" class="toggle-btn" data-value="contract">From Contract</button>
-                            <button type="button" class="toggle-btn" data-value="statute">From Trademark Registration</button>
+                        <label id="rightSourceLabel">Source of Right</label>
+                        <div class="toggle-group" data-toggle="right_source" role="radiogroup" aria-labelledby="rightSourceLabel">
+                            <button type="button" class="toggle-btn" data-value="contract" aria-label="Source of right: From Contract">From Contract</button>
+                            <button type="button" class="toggle-btn" data-value="statute" aria-label="Source of right: From Trademark Registration">From Trademark Registration</button>
                         </div>
                         <input type="hidden" name="right_source" id="rightSourceInput" required />
                     </div>
 
                     <div class="grid" style="margin-top: 12px;">
                         <div class="form-group">
-                            <label>Contract Between Parties</label>
-                            <div class="toggle-group" data-toggle="has_contract">
-                                <button type="button" class="toggle-btn" data-value="true">Yes</button>
-                                <button type="button" class="toggle-btn" data-value="false">No</button>
+                            <label id="hasContractLabel">Contract Between Parties</label>
+                            <div class="toggle-group" data-toggle="has_contract" role="radiogroup" aria-labelledby="hasContractLabel">
+                                <button type="button" class="toggle-btn" data-value="true" aria-label="Contract between parties: Yes">Yes</button>
+                                <button type="button" class="toggle-btn" data-value="false" aria-label="Contract between parties: No">No</button>
                             </div>
                             <input type="hidden" name="has_contract" id="hasContractInput" required />
                         </div>
                         <div class="form-group">
-                            <label>Affects Third Parties</label>
-                            <div class="toggle-group" data-toggle="affects_third_parties">
-                                <button type="button" class="toggle-btn" data-value="true">Yes</button>
-                                <button type="button" class="toggle-btn" data-value="false">No</button>
+                            <label id="affectsThirdLabel">Affects Third Parties</label>
+                            <div class="toggle-group" data-toggle="affects_third_parties" role="radiogroup" aria-labelledby="affectsThirdLabel">
+                                <button type="button" class="toggle-btn" data-value="true" aria-label="Affects third parties: Yes">Yes</button>
+                                <button type="button" class="toggle-btn" data-value="false" aria-label="Affects third parties: No">No</button>
                             </div>
                             <input type="hidden" name="affects_third_parties" id="affectsThirdInput" required />
                         </div>
                     </div>
 
                     <div class="form-group slide-down" id="arbClauseGroup" style="margin-top: 12px;">
-                        <label>Arbitration Clause in Contract</label>
-                        <div class="toggle-group" data-toggle="has_arbitration_clause">
-                            <button type="button" class="toggle-btn" data-value="true">Yes</button>
-                            <button type="button" class="toggle-btn" data-value="false">No</button>
+                        <label id="arbClauseLabel">Arbitration Clause in Contract</label>
+                        <div class="toggle-group" data-toggle="has_arbitration_clause" role="radiogroup" aria-labelledby="arbClauseLabel">
+                            <button type="button" class="toggle-btn" data-value="true" aria-label="Arbitration clause in contract: Yes">Yes</button>
+                            <button type="button" class="toggle-btn" data-value="false" aria-label="Arbitration clause in contract: No">No</button>
                         </div>
                         <input type="hidden" name="has_arbitration_clause" id="arbClauseInput" />
                     </div>
 
                     <div class="form-group" style="margin-top: 12px;">
-                        <label>Dispute Description</label>
-                        <textarea name="dispute_description" id="disputeDesc" minlength="100" required placeholder="Provide full dispute details, timeline, relief sought, and key contractual or statutory context."></textarea>
+                        <label for="disputeDesc">Dispute Description</label>
+                        <textarea name="dispute_description" id="disputeDesc" minlength="100" required placeholder="Provide full dispute details, timeline, relief sought, and key contractual or statutory context." aria-label="Dispute Description"></textarea>
                         <div class="char-count" id="charCount">0 characters</div>
                     </div>
 
-                    <button type="submit" class="submit-btn" id="submitBtn">
+                    <button type="submit" class="submit-btn" id="submitBtn" aria-label="Generate Decision Support System Report">
                         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                             <path d="M3 20h18" />
                             <path d="M6 20V8l6-4 6 4v12" />
@@ -1112,7 +1146,7 @@
                     </div>
                 </div>
 
-                <a class="download-btn" id="downloadBtn" href="#" download>
+                <a class="download-btn" id="downloadBtn" href="#" download aria-label="Download generated Decision Support System report in docx format">
                     <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
                         <polyline points="7 10 12 15 17 10" />
@@ -1144,6 +1178,7 @@
                             class="current-location-btn"
                             id="use-location-btn"
                             onclick="useCurrentLocation()"
+                            aria-label="Use current geographical location to find nearby advocates"
                         >
                             <svg width="14" height="14" viewBox="0 0 24 24"
                                  fill="none" stroke="currentColor"
@@ -1161,17 +1196,20 @@
                         <div class="location-divider">OR SEARCH BY CITY</div>
 
                         <div class="lawyer-search-bar">
+                            <label for="lawyer-city-input" class="sr-only">Search by city name</label>
                             <input
                                 type="text"
                                 id="lawyer-city-input"
                                 class="lawyer-city-input"
                                 placeholder="Enter city  (e.g. Mumbai, Delhi, Chennai)"
                                 onkeydown="if(event.key === 'Enter') searchByCity()"
+                                aria-label="Enter city name to search for advocates"
                             />
                             <button
                                 class="find-lawyers-btn"
                                 id="find-lawyers-btn"
                                 onclick="searchByCity()"
+                                aria-label="Search advocates in the entered city"
                             >
                                 SEARCH
                             </button>
@@ -1216,21 +1254,6 @@
 
     <script>
         (function() {
-            function getApiKey() {
-                let key = localStorage.getItem("X_API_KEY");
-                if (!key) {
-                    key = prompt("Please enter the X-API-Key to authenticate requests:");
-                    if (key) {
-                        localStorage.setItem("X_API_KEY", key);
-                    }
-                }
-                return key || "";
-            }
-
-            function handleUnauthorized() {
-                localStorage.removeItem("X_API_KEY");
-                alert("Unauthorized: The API Key is missing or invalid. Please check the key and try again.");
-            }
 
             const form = document.getElementById("disputeForm");
             const submitBtn = document.getElementById("submitBtn");
@@ -1474,44 +1497,7 @@
                 resetAll();
             });
 
-            downloadBtn.addEventListener("click", async (e) => {
-                e.preventDefault();
-                const url = downloadBtn.getAttribute("href") || downloadBtn.href;
-                if (!url || url === "#" || url === "javascript:void(0)") return;
 
-                downloadBtn.style.pointerEvents = "none";
-                const originalHTML = downloadBtn.innerHTML;
-                downloadBtn.innerHTML = "Downloading...";
-
-                try {
-                    const response = await fetch(url, {
-                        headers: {
-                            "X-API-Key": getApiKey()
-                        }
-                    });
-                    if (response.status === 401) {
-                        handleUnauthorized();
-                        return;
-                    }
-                    if (!response.ok) {
-                        throw new Error("Failed to download file");
-                    }
-                    const blob = await response.blob();
-                    const objectUrl = window.URL.createObjectURL(blob);
-                    const a = document.createElement("a");
-                    a.href = objectUrl;
-                    a.download = downloadBtn.getAttribute("download") || "dss_report.docx";
-                    document.body.appendChild(a);
-                    a.click();
-                    a.remove();
-                    window.URL.revokeObjectURL(objectUrl);
-                } catch (err) {
-                    alert(err.message || "Download failed");
-                } finally {
-                    downloadBtn.style.pointerEvents = "auto";
-                    downloadBtn.innerHTML = originalHTML;
-                }
-            });
 
             function updatePreview(listEl, items) {
                 listEl.innerHTML = "";
@@ -1641,17 +1627,8 @@
                     var res = await fetch(
                         '/find-lawyers?city='
                         + encodeURIComponent(city)
-                        + '&dispute_type=trademark',
-                        {
-                            headers: {
-                                'X-API-Key': getApiKey()
-                            }
-                        }
+                        + '&dispute_type=trademark'
                     );
-                    if (res.status === 401) {
-                        handleUnauthorized();
-                        return;
-                    }
                     var data = await res.json();
                     renderLawyerResults(data, city);
                 } catch (err) {
@@ -1713,17 +1690,8 @@
                                 '/find-lawyers-by-location'
                                 + '?lat=' + lat
                                 + '&lng=' + lng
-                                + '&dispute_type=trademark',
-                                {
-                                    headers: {
-                                        'X-API-Key': getApiKey()
-                                    }
-                                }
+                                + '&dispute_type=trademark'
                             );
-                            if (res.status === 401) {
-                                handleUnauthorized();
-                                return;
-                            }
                             var data = await res.json();
                             renderLawyerResults(
                                 data, 'your current location');
@@ -1832,15 +1800,8 @@
 
                     const response = await fetch("/analyze", {
                         method: "POST",
-                        body: formData,
-                        headers: {
-                            "X-API-Key": getApiKey()
-                        }
+                        body: formData
                     });
-                    if (response.status === 401) {
-                        handleUnauthorized();
-                        throw new Error("Unauthorized: Invalid API Key");
-                    }
                     const data = await response.json();
 
                     if (!response.ok || data.status !== "success") {

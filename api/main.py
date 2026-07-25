@@ -12,11 +12,10 @@ import pydantic_v1_compat  # noqa: F401 — must be before chromadb
 from fastapi import FastAPI, Form, HTTPException, Depends, Request
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.security.api_key import APIKeyHeader
 import uvicorn
 import time
 
-from config import OUTPUT_DIR, EXPECTED_API_KEY, ALLOWED_ORIGINS
+from config import OUTPUT_DIR, ALLOWED_ORIGINS
 from logging_config import logger
 from agents.arbitrability_agent import check_arbitrability
 from agents.landmark_retrieval_agent import retrieve_landmarks, analyze_landmark_applicability
@@ -61,24 +60,6 @@ async def log_requests(request: Request, call_next):
     )
     return response
 
-API_KEY_NAME = "X-API-Key"
-api_key_header = APIKeyHeader(name=API_KEY_NAME, auto_error=False)
-
-async def get_api_key(api_key: str = Depends(api_key_header)):
-    if not api_key:
-        raise HTTPException(
-            status_code=401,
-            detail="API Key is missing"
-        )
-    if api_key != EXPECTED_API_KEY:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid API Key"
-        )
-    return api_key
-
-
-
 @app.get("/")
 async def serve_frontend():
     """Serve the frontend HTML file."""
@@ -88,7 +69,7 @@ async def serve_frontend():
     return FileResponse(frontend_path, media_type="text/html")
 
 
-@app.post("/analyze", dependencies=[Depends(get_api_key)])
+@app.post("/analyze")
 async def analyze_dispute(
     party_a: str = Form(...),
     party_b: str = Form(...),
@@ -218,7 +199,7 @@ async def analyze_dispute(
         )
 
 
-@app.get("/find-lawyers", dependencies=[Depends(get_api_key)])
+@app.get("/find-lawyers")
 async def find_lawyers_endpoint(
     city: str,
     dispute_type: str = "trademark",
@@ -241,7 +222,7 @@ async def find_lawyers_endpoint(
         }
 
 
-@app.get("/find-lawyers-by-location", dependencies=[Depends(get_api_key)])
+@app.get("/find-lawyers-by-location")
 async def find_lawyers_by_location_endpoint(
     lat: float,
     lng: float,
@@ -266,7 +247,7 @@ async def find_lawyers_by_location_endpoint(
         }
 
 
-@app.get("/download/{filename}", dependencies=[Depends(get_api_key)])
+@app.get("/download/{filename}")
 async def download_report(filename: str):
     """Download a generated DSS report."""
     # Sanitize filename to prevent path traversal

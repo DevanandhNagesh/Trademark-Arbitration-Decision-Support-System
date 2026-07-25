@@ -18,7 +18,6 @@ GEMINI_API_KEY = os.getenv("GEMINI_API_KEY", "")
 # Obtain your token at https://indiankanoon.org/api/
 # Add  IKANOON_API_KEY=your_token_here  to your .env file.
 IKANOON_API_KEY = os.getenv("IKANOON_API_KEY", "")
-EXPECTED_API_KEY = os.getenv("API_KEY", "")
 ALLOWED_ORIGINS_RAW = os.getenv("ALLOWED_ORIGINS", "http://localhost:8000,http://127.0.0.1:8000")
 ALLOWED_ORIGINS = [orig.strip() for orig in ALLOWED_ORIGINS_RAW.split(",") if orig.strip()]
 

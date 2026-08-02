@@ -1,0 +1,12 @@
+{
+  "party_a": "The Coca-Cola Company",
+  "party_b": "Bisleri International Pvt Ltd",
+  "trademark_name": "MAAZA",
+  "dispute_type": "Assignment Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "The Coca-Cola Company acquired the trademark MAAZA along with the associated goodwill and business from Bisleri International Pvt Ltd under a Trademark Assignment Agreement executed in 1993. The assignment was in respect of the Indian territory. Bisleri International subsequently began exporting MAAZA-branded mango beverages to foreign markets, contending that the assignment was territorially limited to India and that the right to use the mark internationally remained with Bisleri. Coca-Cola disputes this interpretation, asserting that the assignment was absolute and that any use of the MAAZA mark anywhere by Bisleri constitutes infringement of their acquired rights and a breach of the Assignment Agreement. The Assignment Agreement contains an arbitration clause. Coca-Cola seeks a declaration that the assignment covers all global rights and an injunction against Bisleri's continued use of the MAAZA mark.",
+  "expected_arbitrable": true
+}

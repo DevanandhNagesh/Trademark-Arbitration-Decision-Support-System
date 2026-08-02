@@ -26,9 +26,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from config import (
     CHROMA_COLLECTION,
     CHROMA_PATH,
+    CLASSIFIER_MODEL_PATH,
     EMBEDDING_MODEL,
     IKANOON_API_KEY,
     LANDMARK_CASES,
+    USE_HYBRID_CLASSIFICATION,
 )
 from logging_config import logger
 
@@ -64,7 +66,11 @@ _IKANOON_REQUEST_DELAY = 0.3
 
 
 def _detect_dispute_type(dispute_description: str) -> str:
-    """Infer dispute type from free-form description."""
+    """Infer dispute type from free-form description (original keyword heuristic).
+
+    Kept intact for A/B evaluation against _detect_dispute_type_hybrid.
+    Do NOT delete — referenced in paper's method section.
+    """
     desc = dispute_description.lower()
     if "passing off" in desc:
         return "passing_off"
@@ -79,7 +85,170 @@ def _detect_dispute_type(dispute_description: str) -> str:
     return "trademark"
 
 
-def _build_ikanoon_query(dispute_description: str) -> str:
+# ---------------------------------------------------------------------------
+# Hybrid classifier machinery
+# ---------------------------------------------------------------------------
+
+# Canonical label normaliser for the user-selected dispute_type form field.
+# Maps every human-readable UI string to the same canonical labels the SVM uses.
+_LABEL_ALIASES: dict[str, str] = {
+    "trademark infringement": "infringement",
+    "brand similarity":       "brand_similarity",
+    "passing off":            "passing_off",
+    "assignment dispute":     "assignment",
+    "trademark assignment":   "assignment",
+    "license dispute":        "licensing",
+    "licence dispute":        "licensing",
+    "licensing dispute":      "licensing",
+    # already-canonical forms (identity mapping)
+    "infringement":    "infringement",
+    "brand_similarity": "brand_similarity",
+    "passing_off":     "passing_off",
+    "assignment":      "assignment",
+    "licensing":       "licensing",
+}
+
+
+def _normalise_label(raw: str) -> str:
+    """Normalise a raw dispute_type label to a canonical classifier label."""
+    return _LABEL_ALIASES.get(raw.strip().lower(), "trademark")
+
+
+# Lazy-loaded classifier singleton — loaded once, reused for every request.
+_CLASSIFIER = None
+
+
+def _get_classifier():
+    """Return the DisputeClassifier singleton, loading it on first call.
+
+    Returns None gracefully if the model file is absent or fails to load;
+    callers must fall back to the keyword heuristic in that case.
+    """
+    global _CLASSIFIER
+    if _CLASSIFIER is None:
+        try:
+            from agents.dispute_classifier import DisputeClassifier  # local import avoids circular deps
+            if os.path.exists(CLASSIFIER_MODEL_PATH):
+                _CLASSIFIER = DisputeClassifier().load(CLASSIFIER_MODEL_PATH)
+                logger.info(
+                    "[hybrid_classifier] DisputeClassifier loaded from %s",
+                    CLASSIFIER_MODEL_PATH,
+                )
+            else:
+                logger.warning(
+                    "[hybrid_classifier] Model not found at %s; keyword heuristic will be used.",
+                    CLASSIFIER_MODEL_PATH,
+                )
+        except Exception as exc:  # pragma: no cover
+            logger.warning("[hybrid_classifier] Could not load DisputeClassifier: %s", exc)
+    return _CLASSIFIER
+
+
+# Dedicated logger for disagreement records (paper error-analysis data).
+import logging as _logging
+
+_DISAGREEMENT_LOG_PATH = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.abspath(__file__))),
+    "logs",
+    "classification_disagreements.log",
+)
+os.makedirs(os.path.dirname(_DISAGREEMENT_LOG_PATH), exist_ok=True)
+
+_disagreement_logger = _logging.getLogger("classification_disagreements")
+if not _disagreement_logger.handlers:
+    _dh = _logging.FileHandler(_DISAGREEMENT_LOG_PATH, encoding="utf-8")
+    _dh.setFormatter(_logging.Formatter("%(asctime)s\t%(message)s", datefmt="%Y-%m-%dT%H:%M:%S"))
+    _disagreement_logger.addHandler(_dh)
+    _disagreement_logger.setLevel(_logging.INFO)
+    _disagreement_logger.propagate = False  # keep out of the main app log
+
+# Minimum SVM confidence required to override the keyword heuristic.
+_HYBRID_CONFIDENCE_THRESHOLD = 0.55
+
+
+def _detect_dispute_type_hybrid(
+    dispute_description: str,
+    dispute_type_label: str = "",
+) -> str:
+    """Hybrid dispute-type detector combining keyword heuristic + SVM classifier.
+
+    Decision logic
+    --------------
+    1. Normalise the user-supplied *dispute_type_label* (form dropdown) via the
+       alias map — this is the fast-path, high-precision keyword result.
+    2. Run the SVM DisputeClassifier on *dispute_description* (free text).
+    3. If SVM confidence < _HYBRID_CONFIDENCE_THRESHOLD → trust the keyword
+       result; the description is too vague to override the user's selection.
+    4. If both agree → return that label (maximum confidence path).
+    5. If they disagree and SVM confidence >= threshold → use the SVM label but
+       write a TSV record to classification_disagreements.log for paper analysis.
+
+    Parameters
+    ----------
+    dispute_description : str
+        The free-text description submitted by the user.
+    dispute_type_label : str
+        The raw value from the frontend dropdown (e.g. 'Trademark Infringement').
+        Falls back to running _detect_dispute_type on the description when empty.
+    """
+    # ── Step 1: keyword fast-path ────────────────────────────────────
+    if dispute_type_label.strip():
+        keyword_label = _normalise_label(dispute_type_label)
+    else:
+        # No dropdown value supplied (e.g. API calls without a form) →
+        # run the original keyword heuristic on the description text.
+        keyword_label = _detect_dispute_type(dispute_description)
+
+    # ── Step 2: ML classifier ────────────────────────────────────────
+    clf = _get_classifier()
+    if clf is None:
+        # Model unavailable — fall back to keyword result silently.
+        logger.debug("[hybrid_classifier] Classifier unavailable; using keyword result '%s'.", keyword_label)
+        return keyword_label
+
+    try:
+        ml_label, ml_confidence = clf.predict(dispute_description)
+    except Exception as exc:
+        logger.warning("[hybrid_classifier] predict() failed (%s); using keyword result.", exc)
+        return keyword_label
+
+    # ── Step 3: low-confidence guard ────────────────────────────────
+    if ml_confidence < _HYBRID_CONFIDENCE_THRESHOLD:
+        logger.debug(
+            "[hybrid_classifier] SVM confidence %.3f below threshold (%.2f); "
+            "using keyword result '%s' (SVM said '%s').",
+            ml_confidence, _HYBRID_CONFIDENCE_THRESHOLD, keyword_label, ml_label,
+        )
+        return keyword_label
+
+    # ── Step 4: agreement ────────────────────────────────────────────
+    if ml_label == keyword_label:
+        logger.debug(
+            "[hybrid_classifier] Agreement: both methods returned '%s' (SVM conf=%.3f).",
+            ml_label, ml_confidence,
+        )
+        return ml_label
+
+    # ── Step 5: disagreement — log for paper, trust SVM ─────────────
+    _disagreement_logger.info(
+        "keyword=%s\tml=%s\tconfidence=%.4f\tdesc_preview=%s",
+        keyword_label,
+        ml_label,
+        ml_confidence,
+        dispute_description[:120].replace("\n", " "),
+    )
+    logger.info(
+        "[hybrid_classifier] Disagreement: keyword='%s' vs SVM='%s' (conf=%.3f). "
+        "Using SVM result. Logged to classification_disagreements.log.",
+        keyword_label, ml_label, ml_confidence,
+    )
+    return ml_label
+
+
+def _build_ikanoon_query(
+    dispute_description: str,
+    dispute_type_label: str = "",
+) -> str:
     """
     Construct a focused iKanoon full-text search query from the free-form
     dispute description using dispute-type-aware legal keywords.
@@ -90,7 +259,10 @@ def _build_ikanoon_query(dispute_description: str) -> str:
     - Avoid party-specific facts.
     - Prefer Supreme Court / High Court precedent cues.
     """
-    dispute_type = _detect_dispute_type(dispute_description)
+    if USE_HYBRID_CLASSIFICATION:
+        dispute_type = _detect_dispute_type_hybrid(dispute_description, dispute_type_label)
+    else:
+        dispute_type = _detect_dispute_type(dispute_description)
 
     base = ["Supreme Court", "High Court", "India"]
     type_queries = {
@@ -286,14 +458,15 @@ def _build_match_from_registry(
 def _retrieve_via_ikanoon(
     dispute_description: str,
     n_results: int,
+    dispute_type_label: str = "",
 ) -> list[LandmarkMatch]:
     """
     Full iKanoon retrieval pipeline:
-        build query → fetch hits → map to LANDMARK_CASES → deduplicate
+        build query -> fetch hits -> map to LANDMARK_CASES -> deduplicate
 
     Raises on auth / network failure so the caller can fall back to ChromaDB.
     """
-    query = _build_ikanoon_query(dispute_description)
+    query = _build_ikanoon_query(dispute_description, dispute_type_label)
     fetch_n = max(n_results * _IKANOON_FETCH_MULTIPLIER, 20)
 
     raw_hits = _fetch_ikanoon_results(query, max_results=fetch_n)
@@ -390,6 +563,7 @@ def retrieve_landmarks(
     dispute_description: str,
     arbitrability_result=None,
     n_results: int = 3,
+    dispute_type_label: str = "",
 ) -> List[LandmarkMatch]:
     """
     Retrieve top landmark cases for the given dispute description.
@@ -410,7 +584,7 @@ def retrieve_landmarks(
     # ── 1. Primary: iKanoon ──────────────────────────────────────────
     ikanoon_ok = False
     try:
-        matches = _retrieve_via_ikanoon(dispute_description, n_results)
+        matches = _retrieve_via_ikanoon(dispute_description, n_results, dispute_type_label)
         seen_case_keys = {m.case_key for m in matches}
         ikanoon_ok = True
         logger.info(f"[landmark_retrieval] iKanoon returned {len(matches)} results.")

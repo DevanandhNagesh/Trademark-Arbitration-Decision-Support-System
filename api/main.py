@@ -115,7 +115,11 @@ async def analyze_dispute(
         arbitrability_result = check_arbitrability(dispute)
 
         # 3. Retrieve landmark cases (ChromaDB — no LLM)
-        landmark_matches = retrieve_landmarks(dispute_description, arbitrability_result)
+        landmark_matches = retrieve_landmarks(
+            dispute_description,
+            arbitrability_result,
+            dispute_type_label=dispute_type,
+        )
 
         # 5. Analyze landmark applicability (no LLM)
         landmark_analyses = [

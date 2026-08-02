@@ -1,0 +1,12 @@
+{
+  "party_a": "M/S Golden Tobacco Ltd",
+  "party_b": "M/S Golden Tobacco Co",
+  "trademark_name": "GOLDEN TOBACCO",
+  "dispute_type": "Assignment Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "M/S Golden Tobacco Ltd transferred ownership of the registered trademark GOLDEN TOBACCO to M/S Golden Tobacco Co under a Trademark Assignment Deed along with the goodwill of the associated tobacco business. Following execution of the deed, the assignor M/S Golden Tobacco Ltd continued to manufacture and sell tobacco products under the GOLDEN TOBACCO mark in competing markets, claiming that certain conditions precedent in the deed had not been fulfilled and that the assignment had therefore lapsed. The assignee M/S Golden Tobacco Co contends that the assignment was unconditional and immediately operative, and that the mark now vests exclusively with it under Section 37 of the Trade Marks Act 1999. The Assignment Deed contains an arbitration clause providing for arbitration under the Arbitration and Conciliation Act 1996. The assignee seeks a permanent injunction against the assignor's use and a declaration of exclusive ownership.",
+  "expected_arbitrable": true
+}

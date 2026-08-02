@@ -1,0 +1,12 @@
+{
+  "party_a": "Apex Beverages Ltd",
+  "party_b": "Apex Beverages Holdings Ltd",
+  "trademark_name": "APEX COOL",
+  "dispute_type": "Assignment Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": true,
+  "right_source": "contract",
+  "affects_third_parties": false,
+  "dispute_description": "Apex Beverages Ltd assigned the trademark APEX COOL to its wholly-owned subsidiary Apex Beverages Holdings Ltd as part of an internal group restructuring under a Trademark Assignment Agreement dated 1 April 2023. The subsidiary was subsequently acquired by an external investor group. Apex Beverages Ltd now disputes the scope of the assignment, asserting that the Assignment Agreement contained a condition that the trademark would revert to Apex Beverages Ltd if the subsidiary ceased to be wholly-owned by the Apex group, which condition has now been triggered. The subsidiary and the new investor group contest this interpretation, arguing the assignment was unconditional and the reversion clause is unenforceable. The Assignment Agreement contains an arbitration clause providing for seat at Mumbai under the Arbitration and Conciliation Act 1996. Apex Beverages Ltd seeks a declaration of reversion of the trademark and an injunction against further use by the respondent.",
+  "expected_arbitrable": true
+}

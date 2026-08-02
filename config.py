@@ -27,6 +27,20 @@ CHROMA_COLLECTION = "trademark_cases"
 EMBEDDING_MODEL = "all-MiniLM-L6-v2"
 OUTPUT_DIR = os.path.join(os.path.dirname(__file__), "output")
 
+# ── Dispute Classification ───────────────────────────────────────────
+# Toggle hybrid ML + keyword classification for dispute type detection.
+# True  → uses DisputeClassifier (SVM) with keyword fallback (production default).
+# False → uses the original keyword-only heuristic (for A/B evaluation / paper).
+# Override at runtime via env: USE_HYBRID_CLASSIFICATION=false
+USE_HYBRID_CLASSIFICATION: bool = (
+    os.getenv("USE_HYBRID_CLASSIFICATION", "true").strip().lower() == "true"
+)
+
+# Absolute path to the trained DisputeClassifier joblib model file.
+CLASSIFIER_MODEL_PATH: str = os.path.join(
+    os.path.dirname(__file__), "models", "dispute_classifier.joblib"
+)
+
 # ── Landmark Cases Registry ────────────────────────────────────────
 LANDMARK_CASES = {
     "booz_allen": {

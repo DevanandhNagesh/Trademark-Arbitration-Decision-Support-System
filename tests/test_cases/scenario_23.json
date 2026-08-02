@@ -1,0 +1,12 @@
+{
+  "party_a": "Bata India Ltd",
+  "party_b": "Pyare Lal and Sons",
+  "trademark_name": "BATA",
+  "dispute_type": "Assignment Dispute",
+  "has_contract": true,
+  "has_arbitration_clause": false,
+  "right_source": "contract",
+  "affects_third_parties": true,
+  "dispute_description": "Bata India Ltd is the registered owner of the trademark BATA for footwear in India. Pyare Lal and Sons, a small regional retailer, claims to have acquired the right to use the BATA mark in the state of Rajasthan under an alleged oral assignment from a deceased former distributor who purportedly held a sub-assigned right. Bata India contends there was no valid assignment at any stage, as the Trade Marks Act 1999 requires an assignment to be in writing and registered, and the purported oral assignment is void. Pyare Lal and Sons is selling footwear under the BATA mark without any written agreement or authorisation. There is no arbitration clause as there is no written agreement between the parties. Bata India seeks a permanent injunction and damages for infringement and unauthorized use.",
+  "expected_arbitrable": false
+}

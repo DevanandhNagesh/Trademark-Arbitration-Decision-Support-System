@@ -116,21 +116,64 @@ GROQ_API_KEY=your_groq_key_here
 2. Load the `deepseek-r1-7b` model
 3. Start the local server (default: `http://localhost:1234/v1`)
 
-## Test Scenarios
+## Test Scenarios & Configuration Modes
 
-Two test scenarios are provided in `tests/test_cases/`:
+Two primary test scenarios are provided in `tests/test_cases/` (with 28 total scenario JSON cases available for batch testing):
 
-### Scenario 1 — NOT ARBITRABLE (Parle/Oreo type)
-No contract between parties. Pure trademark infringement against a stranger.
-- File: `tests/test_cases/scenario_1.json`
-- Expected: **NOT ARBITRABLE** (routes to civil court)
+- **Scenario 1 — NOT ARBITRABLE (Parle/Oreo type):** No contract. Pure trademark infringement against a stranger.
+  - File: `tests/test_cases/scenario_1.json`
+  - Expected: **NOT ARBITRABLE** (routes to civil court)
+- **Scenario 2 — ARBITRABLE (Hero Electric/License type):** Distribution agreement with arbitration clause.
+  - File: `tests/test_cases/scenario_2.json`
+  - Expected: **ARBITRABLE** (full DSS report generated)
 
-### Scenario 2 — ARBITRABLE (Hero Electric/License type)
-Distribution agreement with arbitration clause. Post-expiry unauthorized use.
-- File: `tests/test_cases/scenario_2.json`
-- Expected: **ARBITRABLE** (full DSS report with award framework)
+To test a scenario, load its details manually via the web form at `http://localhost:8000`.
 
-To test, load scenario details manually via the web form at `http://localhost:8000`.
+---
+
+### Running in Different Modes (API Toggles)
+
+You can toggle or disable external API dependencies (iKanoon, Gemini LLM, Google Places) to run in online, local-only, or budget-friendly modes.
+
+#### 1. Running with or without iKanoon (Online vs. Offline Retrieval)
+* **Online Mode (Default):** Requires `INDIAKANOON_API_KEY` set in `.env`. Fetches live real-time judgments from the Indian courts.
+* **Offline Mode (Rs. 0 Cost):** Unset your key to force the retrieval agent to bypass live calls and search the local vector database (ChromaDB) and static fallbacks.
+  * **Windows Command Prompt:**
+    ```bash
+    set INDIAKANOON_API_KEY=&& cd api && uvicorn main:app --reload --port 8000
+    ```
+  * **Windows PowerShell:**
+    ```powershell
+    $env:INDIAKANOON_API_KEY=""; cd api; uvicorn main:app --reload --port 8000
+    ```
+
+#### 2. Running with or without Gemini (LLM Analysis)
+* **With Gemini (Default):** Set `GEMINI_API_KEY` in `.env` to enable full award framework drafting and adversarial analysis generation.
+* **Without Gemini (Rule Engine + Retrieval Only):** Run tests or evaluations in fast rule-only mode by passing the `--skip-llm` flag to the evaluation harness.
+
+#### 3. Bypassing Google Places API (Lawyer Finder API Cost Control)
+If you want to test the Lawyer Finder without incurring Google Places API usage costs or if you do not have a key:
+* Simply leave `GOOGLE_PLACES_API_KEY` empty or unset in your `.env` file.
+* The backend will automatically detect this and fallback gracefully to returning a direct web search link for trademark advocates in the target city (producing Rs. 0 cost).
+
+---
+
+## Quantitative Evaluation Harness
+
+The system includes a batch evaluation harness to compare classification rules, SVM prediction models, LLM classification capabilities, and case retrieval accuracy across all 28 test cases.
+
+To run the harness, use:
+
+```bash
+# Run Part A & Part B (Fast Mode, un-metered, skipping LLM classifications)
+python evaluation_harness.py --skip-llm
+
+# Run full evaluation (Part A classification + Part B retrieval under both Online/Offline modes)
+python evaluation_harness.py
+```
+
+* **Output Markdown Report:** `evaluation_report.md` (paper-ready tables containing Precision, Recall, F1, and tier breakdowns)
+* **Output JSON File:** `evaluation_results.json` (raw metric payload)
 
 ## Output
 

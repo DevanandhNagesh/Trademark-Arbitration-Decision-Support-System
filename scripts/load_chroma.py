@@ -10,7 +10,7 @@ import pydantic_v1_compat  # noqa: F401 — must be before chromadb
 import chromadb
 from chromadb.utils.embedding_functions import SentenceTransformerEmbeddingFunction
 
-from config import CHROMA_PATH, CHROMA_COLLECTION, EMBEDDING_MODEL
+from config import CHROMA_PATH, CHROMA_COLLECTION, EMBEDDING_MODEL, LANDMARK_CASES
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 CHUNKS_FILE = os.path.join(BASE_DIR, "data", "chunks", "all_chunks.json")
@@ -60,6 +60,18 @@ def load_chunks_to_chroma():
                 "chunk_index": chunk["chunk_index"],
                 "total_chunks": chunk["total_chunks"],
                 "word_count": chunk["word_count"],
+                "chunk_type": chunk.get("chunk_type", "substantive"),
+                "citation_density": chunk.get("citation_density", 0.0),
+                "distinct_other_citations": chunk.get("distinct_other_citations", 0),
+                # category: joined from LANDMARK_CASES registry so ChromaDB `where`
+                # filters can hard-restrict results to the queried dispute category.
+                # Statute / compendium chunks not in LANDMARK_CASES get their doc_type
+                # as the category so the field is always present and never None.
+                "category": (
+                    LANDMARK_CASES[chunk["case_key"]]["category"]
+                    if chunk["case_key"] in LANDMARK_CASES
+                    else chunk["doc_type"]
+                ),
             }
             for chunk in batch
         ]
@@ -93,7 +105,7 @@ def load_chunks_to_chroma():
             print(f"  [{i + 1}] {chunk_id} (case: {case_key}, dist: {distance:.4f})")
             print(f"      {preview}...")
 
-    print("\n✓ ChromaDB loaded and verified successfully.")
+    print("\n[OK] ChromaDB loaded and verified successfully.")
 
 
 if __name__ == "__main__":

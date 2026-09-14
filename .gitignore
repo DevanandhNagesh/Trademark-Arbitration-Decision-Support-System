@@ -50,3 +50,14 @@ Desktop.ini
 
 ### Node (if used for tooling)
 node_modules/
+docs/review_1_document.md 
+scratch/
+docs/review_1_document.md
+evaluation_report.md 
+evaluation_results.json 
+"diagnose_retrieval_anomaly.py\evaluation_harness.py\scripts/filter_citation_heavy_chunks.py" 
+evaluation_harness.py 
+diagnose_retrieval_anamoly.py  
+scripts/filter_citation_heavy_chunks.py  
+diagnose_retrieval_anamoly.py 
+diagnose_retrieval_anomaly.py 

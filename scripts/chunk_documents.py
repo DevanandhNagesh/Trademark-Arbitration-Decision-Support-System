@@ -23,6 +23,20 @@ FILENAME_TO_CASE_KEY = {
     "eros": "eros_telemax",
     "mangayarkarasi": "mangayarkarasi_2025",
     "rohan": "rohan_builders",
+    "laxmikant": "laxmikant_patel",
+    "mahendra": "mahendra_mahendra",
+    "ruston": "ruston_hornsby",
+    "kaviraj": "kaviraj_pandit",
+    "hennes": "hms_mauritz",
+    "mohideen": "syed_mohideen",
+    "chinna": "chinna_krishna",
+    "dhodha": "dhodha_house",
+    "exphar": "exphar_sa",
+    "field_marshal": "patel_field_marshal",
+    "bata": "bata_india",
+    "allergan": "allergan_ocuflox",
+    "marico": "marico_parachute",
+    "louboutin": "christian_louboutin",
     "trademark": "trade_marks_act",
     "arbitration": "arbitration_act",
     "contract": "contract_act",
@@ -44,6 +58,20 @@ DOC_TYPE_MAP = {
     "eros_telemax": "judgment",
     "mangayarkarasi_2025": "judgment",
     "rohan_builders": "judgment",
+    "laxmikant_patel": "judgment",
+    "mahendra_mahendra": "judgment",
+    "ruston_hornsby": "judgment",
+    "kaviraj_pandit": "judgment",
+    "hms_mauritz": "judgment",
+    "syed_mohideen": "judgment",
+    "chinna_krishna": "judgment",
+    "dhodha_house": "judgment",
+    "exphar_sa": "judgment",
+    "patel_field_marshal": "judgment",
+    "bata_india": "judgment",
+    "allergan_ocuflox": "judgment",
+    "marico_parachute": "judgment",
+    "christian_louboutin": "judgment",
     "trade_marks_act": "statute",
     "arbitration_act": "statute",
     "contract_act": "statute",
@@ -142,7 +170,7 @@ def chunk_all_files():
             }
             all_chunks.append(chunk_entry)
 
-        print(f"  {txt_file} → {total_chunks} chunks (case_key: {case_key})")
+        print(f"  {txt_file} -> {total_chunks} chunks (case_key: {case_key})")
 
     output_path = os.path.join(OUTPUT_DIR, "all_chunks.json")
     with open(output_path, "w", encoding="utf-8") as f:
@@ -150,6 +178,14 @@ def chunk_all_files():
 
     print(f"\nTotal chunks generated: {len(all_chunks)}")
     print(f"Output saved to {output_path}")
+
+    # Annotate chunks with citation density classification
+    print("\nRunning citation density classification preprocessing...")
+    try:
+        from scripts.filter_citation_heavy_chunks import annotate_chunks_file
+        annotate_chunks_file(output_path)
+    except Exception as e:
+        print(f"Error running citation density classification: {e}")
 
 
 if __name__ == "__main__":

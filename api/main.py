@@ -203,6 +203,9 @@ async def analyze_dispute(
                 "adversarial_summary": adversarial_summary,
                 "adversarial_preview": adversarial_preview,
                 "narrative_warning": arbitrability_result.narrative_warning,
+                "requires_manual_review": arbitrability_result.requires_manual_review,
+                "review_reason": arbitrability_result.review_reason,
+                "contract_narrative_mismatch": arbitrability_result.contract_narrative_mismatch,
                 "generation_method": "fallback" if (master_method == "fallback" or adv_method == "fallback") else "live",
             }
         )

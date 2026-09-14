@@ -94,6 +94,97 @@ _LABEL_ALIASES: Dict[str, str] = {
 #: How many top TF-IDF features to log per class (for the paper method section).
 _TOP_FEATURES_PER_CLASS: int = 10
 
+#: Synthetic passing_off examples injected at training time to counteract
+#: the small-data problem where the SVM overfits to entity names (Haldiram /
+#: Hariram) rather than legal vocabulary.
+#:
+#: Design rationale:
+#:   • The 28 scenarios give only 5 passing_off examples. The SVM learns
+#:     that "haldiram" and "hariram" signal passing_off rather than learning
+#:     the legal concepts (goodwill, misrepresentation, unregistered mark).
+#:   • When the test split excludes Haldiram scenarios, passing_off has no
+#:     anchor and gets misclassified as brand_similarity or infringement.
+#:   • These 7 entity-agnostic examples explicitly surface the legal
+#:     vocabulary that *defines* passing_off under the classic trinity test
+#:     (Lord Oliver in Jif Lemon / Reckitt & Colman v Borden):
+#:       1. Goodwill / reputation in the claimant's get-up or name
+#:       2. Misrepresentation by the defendant
+#:       3. Actual or likely damage
+#:   • They are deliberately short so they don't drown out real scenarios.
+#:   • None mention specific parties → no entity leakage.
+_PASSING_OFF_AUGMENTATION: List[Dict] = [
+    {
+        "dispute_type": "passing_off",
+        "dispute_description": (
+            "The claimant has used an unregistered mark in trade for over two decades "
+            "and has acquired substantial goodwill and reputation. The defendant adopted "
+            "a deceptively similar get-up, constituting misrepresentation that its goods "
+            "originate from the claimant, causing damage to the claimant's goodwill. "
+            "The claimant seeks an injunction under the common law tort of passing off."
+        ),
+    },
+    {
+        "dispute_type": "passing_off",
+        "dispute_description": (
+            "Classic trinity of passing off: the claimant's mark has acquired "
+            "secondary meaning and consumer recognition through long and extensive use. "
+            "The defendant's misrepresentation misled consumers into believing the goods "
+            "emanate from the claimant, damaging its established goodwill. No registered "
+            "trademark exists; the claim rests entirely on common law rights."
+        ),
+    },
+    {
+        "dispute_type": "passing_off",
+        "dispute_description": (
+            "The claimant has built up substantial goodwill in its trade name through "
+            "extensive use in India. The defendant adopted a phonetically and visually "
+            "similar name, creating misrepresentation in the market. This misrepresentation "
+            "damages the claimant's reputation and business. The dispute is a classic "
+            "passing off action based on unregistered rights and goodwill."
+        ),
+    },
+    {
+        "dispute_type": "passing_off",
+        "dispute_description": (
+            "The claimant's unregistered mark enjoys transborder reputation in India "
+            "by virtue of international use and advertising. The defendant's adoption of "
+            "a similar mark constitutes misrepresentation of the origin of goods, causing "
+            "damage to the claimant's goodwill. Passing off is established even in the "
+            "absence of a registered trademark where reputation precedes registration."
+        ),
+    },
+    {
+        "dispute_type": "passing_off",
+        "dispute_description": (
+            "The claimant operates hospitality services under a trade name that has "
+            "acquired distinctive character and goodwill over many years. The defendant "
+            "opened competing establishments using a confusingly similar name and get-up, "
+            "leading consumers to believe the services are associated with the claimant. "
+            "This constitutes passing off causing damage to the claimant's business and reputation."
+        ),
+    },
+    {
+        "dispute_type": "passing_off",
+        "dispute_description": (
+            "Passing off requires proof of goodwill, misrepresentation, and damage. "
+            "The claimant's mark, though unregistered, has acquired widespread consumer "
+            "recognition as a source identifier. The defendant's use of a similar mark "
+            "and trade dress misrepresents the commercial origin of its goods and services, "
+            "causing actual damage to the claimant's goodwill and reputation in the market."
+        ),
+    },
+    {
+        "dispute_type": "passing_off",
+        "dispute_description": (
+            "The defendant's adoption of a deceptively similar name and get-up constitutes "
+            "misrepresentation of the commercial origin of its goods. The claimant has "
+            "established common law rights in the mark through prior use and goodwill. "
+            "Consumers familiar with the claimant's mark are likely to be deceived into "
+            "associating the defendant's goods with the claimant, causing damage to goodwill."
+        ),
+    },
+]
+
 
 # ---------------------------------------------------------------------------
 # Label normalisation helper
@@ -139,8 +230,13 @@ class DisputeClassifier:
         fitting.  Set to 0 to skip (useful in unit tests).
     """
 
-    def __init__(self, top_features_per_class: int = _TOP_FEATURES_PER_CLASS) -> None:
+    def __init__(
+        self,
+        top_features_per_class: int = _TOP_FEATURES_PER_CLASS,
+        augment_passing_off: bool = True,
+    ) -> None:
         self._top_features_per_class = top_features_per_class
+        self._augment_passing_off = augment_passing_off
         self._pipeline: Optional[Pipeline] = None
         self._classes_: Optional[np.ndarray] = None
 
@@ -148,7 +244,7 @@ class DisputeClassifier:
     # Public API
     # ------------------------------------------------------------------
 
-    def train(self, training_data: List[Dict]) -> None:
+    def train(self, training_data: List[Dict], augment_passing_off: Optional[bool] = None) -> None:
         """Fit the classifier on labelled examples.
 
         Parameters
@@ -157,6 +253,11 @@ class DisputeClassifier:
             List of dicts with keys ``dispute_description`` (str) and
             ``dispute_type`` (str).  Labels are normalised via
             :func:`normalise_label` before fitting.
+        augment_passing_off:
+            If True (default: value set in __init__), append
+            ``_PASSING_OFF_AUGMENTATION`` synthetic examples to the training
+            corpus before fitting.  Pass False to disable (e.g. in ablation
+            tests).  None means use the instance default.
 
         Raises
         ------
@@ -194,6 +295,26 @@ class DisputeClassifier:
 
         if skipped:
             logger.info("Skipped %d items due to missing fields.", skipped)
+
+        # ---- Passing-off augmentation ----------------------------------------
+        # Inject entity-agnostic synthetic examples *before* fitting so that
+        # the SVM learns legal vocabulary (goodwill, misrepresentation,
+        # unregistered mark, common law rights) rather than entity names.
+        _do_augment = (
+            self._augment_passing_off
+            if augment_passing_off is None
+            else augment_passing_off
+        )
+        if _do_augment:
+            for item in _PASSING_OFF_AUGMENTATION:
+                desc = item["dispute_description"].strip()
+                label = normalise_label(item["dispute_type"])
+                texts.append(desc)
+                labels.append(label)
+            logger.info(
+                "Augmented training corpus with %d synthetic passing_off examples.",
+                len(_PASSING_OFF_AUGMENTATION),
+            )
 
         unique_classes = list(set(labels))
         if len(unique_classes) < 2:

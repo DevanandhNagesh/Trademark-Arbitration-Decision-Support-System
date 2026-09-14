@@ -197,7 +197,42 @@ def generate_dss_report(
     _add_paragraph(doc, status_text, bold=True, color=status_color, size=16,
                    alignment=WD_ALIGN_PARAGRAPH.CENTER)
 
-    # Check for narrative classification warning
+    # ── HIGH-SEVERITY: MANUAL REVIEW REQUIRED block ──────────────────────────
+    # Rendered first (above the softer amber warning) so it cannot be missed.
+    # Fires only when narrative description contains strong in rem keywords
+    # (cancellation / rectification / revocation / removal from register) while
+    # the structured dispute_type routes to an ARBITRABLE verdict.
+    review_required = getattr(arbitrability_result, "requires_manual_review", False)
+    review_reason_text = getattr(arbitrability_result, "review_reason", "")
+    if review_required and review_reason_text:
+        p = doc.add_paragraph()
+        run_title = p.add_run("🚨 MANUAL REVIEW REQUIRED — ARBITRABILITY DETERMINATION MAY BE UNRELIABLE\n")
+        run_title.bold = True
+        run_title.font.color.rgb = RED
+        run_title.font.size = Pt(12)
+
+        run_msg = p.add_run(review_reason_text)
+        run_msg.font.size = Pt(10.5)
+        run_msg.bold = False
+        run_msg.italic = True
+        run_msg.font.color.rgb = RED
+
+        pPr = p._p.get_or_add_pPr()
+        pBdr = parse_xml(
+            f'<w:pBdr {nsdecls("w")}>'
+            f'<w:top w:val="thick" w:sz="24" w:space="4" w:color="CC0000"/>'
+            f'<w:left w:val="thick" w:sz="24" w:space="4" w:color="CC0000"/>'
+            f'<w:bottom w:val="thick" w:sz="24" w:space="4" w:color="CC0000"/>'
+            f'<w:right w:val="thick" w:sz="24" w:space="4" w:color="CC0000"/>'
+            f'</w:pBdr>'
+        )
+        pPr.append(pBdr)
+        p.paragraph_format.space_before = Pt(6)
+        p.paragraph_format.space_after = Pt(12)
+
+    # ── LOW-SEVERITY: Narrative classification disagreement (amber footnote) ──
+    # Preserved unchanged. Renders even when requires_manual_review is False
+    # (e.g. disagreement detected but dispute_type is already non-arbitrable).
     warning_info = getattr(arbitrability_result, "narrative_warning", None)
     if warning_info and warning_info.get("has_disagreement", False):
         msg = warning_info.get("message", "")

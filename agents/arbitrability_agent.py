@@ -1,6 +1,7 @@
 """Arbitrability determination agent — ZERO LLM calls, pure deterministic logic."""
 
 import os
+import re
 import sys
 from dataclasses import dataclass, field
 
@@ -20,6 +21,16 @@ class ArbitrabilityResult:
     recommendation: str = ""
     applicable_landmark: str = ""
     narrative_warning: dict = field(default_factory=dict)
+    clause_text_contradiction: bool = False
+    # Narrative severity fields — set when the free-text description strongly
+    # implies in rem rights while the structured dispute_type suggests arbitrability.
+    # The verdict is NOT auto-flipped; this is a prominence signal only.
+    requires_manual_review: bool = False
+    review_reason: str = ""
+    # Contract-narrative mismatch — set when has_contract=True but the
+    # dispute_description contains no contractual language at all.
+    # Purely informational; does not affect is_arbitrable.
+    contract_narrative_mismatch: dict = field(default_factory=dict)
 
 
 def apply_booz_allen_test(dispute: dict) -> dict:
@@ -203,6 +214,49 @@ def apply_vidya_drolia_test(dispute: dict) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Exclusion-language patterns that override a True has_arbitration_clause flag
+# ---------------------------------------------------------------------------
+_EXCLUSION_PATTERNS = [
+    r"shall\s+not\s+be\s+referred\s+to\s+arbitration",
+    r"(?:exclusively|only|solely)\s+by\s+(?:the\s+)?(?:civil|competent)\s+court",
+    r"(?:civil|competent)\s+courts?\s+(?:of|in|at)\b",   # e.g. "civil courts of Mumbai"
+    r"not\s+by\s+arbitration",
+    r"arbitration\s+is\s+excluded",
+    r"no\s+arbitration",
+    r"disputes?\s+shall\s+be\s+(?:resolved|settled|adjudicated)\s+(?:exclusively|only|solely)\s+by",
+    r"exclude[sd]?\s+(?:from\s+)?arbitration",
+    r"oust(?:ing)?\s+(?:the\s+)?jurisdiction\s+of\s+(?:any\s+)?arbitr",
+]
+_EXCLUSION_RE = re.compile(
+    "|".join(_EXCLUSION_PATTERNS),
+    flags=re.IGNORECASE,
+)
+
+
+def _check_clause_contradiction(dispute: dict) -> tuple[bool, str]:
+    """Return (contradicted, matched_snippet) if arbitration_clause_text contains
+    exclusion language that contradicts a True has_arbitration_clause flag.
+
+    Returns (False, "") when:
+      - has_arbitration_clause is False (nothing to contradict), or
+      - arbitration_clause_text is absent / empty, or
+      - no exclusion pattern is found.
+    """
+    if not dispute.get("has_arbitration_clause", False):
+        return False, ""
+
+    clause_text = dispute.get("arbitration_clause_text", "") or ""
+    if not clause_text.strip():
+        return False, ""
+
+    match = _EXCLUSION_RE.search(clause_text)
+    if match:
+        return True, match.group(0).strip()
+
+    return False, ""
+
+
 def check_narrative_disagreement(dispute: dict) -> dict:
     """Check for keywords in dispute_description that conflict with selected dispute_type."""
     dispute_description = dispute.get("dispute_description", "").lower()
@@ -267,19 +321,210 @@ def check_narrative_disagreement(dispute: dict) -> dict:
     }
 
 
+# ---------------------------------------------------------------------------
+# Narrative-severity keywords: these are the in rem signals that, when found in
+# dispute_description while dispute_type is on the arbitrable path, warrant a
+# "MANUAL REVIEW REQUIRED" flag rather than just the softer amber warning.
+# ---------------------------------------------------------------------------
+_SEVERE_IN_REM_KEYWORDS: list[str] = [
+    "cancellation",
+    "rectification",
+    "removal from register",
+    "revocation",
+    "expungement",
+    "removal from the register",
+    "strike off",
+    "struck off",
+]
+
+# dispute_type values that are on the arbitrable / in-personam path and should
+# NOT themselves contain in rem language (if they did, narrative disagreement
+# would not fire — the existing check already handles that).
+_ARBITRABLE_DISPUTE_TYPES: list[str] = [
+    "license",
+    "licence",
+    "assignment",
+    "distribution",
+    "brand similarity",
+    "franchise",
+    "co-existence",
+    "coexistence",
+]
+
+
+# ---------------------------------------------------------------------------
+# Contract-narrative mismatch check
+# ---------------------------------------------------------------------------
+# Keywords that a dispute description is expected to contain when
+# has_contract=True.  At least ONE must match (whole-word, case-insensitive)
+# for the claim to be plausible.  Multi-word phrases are matched as a unit.
+#
+# Design note: use word-boundary anchors (\b) to avoid false positives like
+# 'mou' matching inside 'famous', or 'agreed' inside 'trademark'.
+_CONTRACT_INDICATOR_KEYWORDS: list[str] = [
+    r"\bagreement\b",
+    r"\blicen[sc]e\b",          # license / licence
+    r"\bcontract\b",
+    r"\bmemorandum of understanding\b",
+    r"\bm\.?o\.?u\.?\b",       # MOU / M.O.U.
+    r"\bclause\b",
+    r"\blicensor\b",
+    r"\blicensee\b",
+    r"\bassignment deed\b",
+    r"\bdistribution agreement\b",
+    r"\bdistributorship agreement\b",
+    r"\bfranchise agreement\b",
+    r"\bco-?existence agreement\b",
+    r"\bconsent agreement\b",
+    r"\bsettlement agreement\b",
+    r"\bdeed of assignment\b",
+    r"\bletter of intent\b",
+    r"\bsupply agreement\b",
+    r"\bcollaboration agreement\b",
+    r"\bjoint venture\b",
+    r"\bsub-licen[sc]e\b",
+    r"\bsub-licensee\b",
+    r"\broyalty\b",
+    r"\bpermitted use\b",
+    r"\bentered into\b",
+    r"\bcontractual\b",
+]
+_CONTRACT_RE = re.compile(
+    "|".join(_CONTRACT_INDICATOR_KEYWORDS),
+    flags=re.IGNORECASE,
+)
+
+
+def check_contract_narrative_mismatch(dispute: dict) -> dict:
+    """Check whether has_contract=True is corroborated by dispute_description.
+
+    Returns a dict with keys:
+      - has_mismatch (bool)  — True when the flag says contract exists but
+        description contains zero contractual language.
+      - message (str)        — Human-readable explanation; empty when no mismatch.
+
+    Conditions for mismatch:
+      - has_contract must be explicitly True (False / missing → no check needed).
+      - dispute_description must be non-empty.
+      - None of the _CONTRACT_INDICATOR_KEYWORDS appear in the description
+        (case-insensitive).
+
+    This check is purely informational — is_arbitrable is never changed.
+    """
+    if not dispute.get("has_contract", False):
+        return {"has_mismatch": False, "message": ""}
+
+    description = dispute.get("dispute_description", "") or ""
+    if not description.strip():
+        return {"has_mismatch": False, "message": ""}
+
+    description_lower = description.lower()
+    found = bool(_CONTRACT_RE.search(description_lower))
+
+    if found:
+        return {"has_mismatch": False, "message": ""}
+
+    message = (
+        "\u2018Contract Between Parties\u2019 was marked YES, but no contractual "
+        "language (e.g. agreement, license, clause, MOU, licensor/licensee, "
+        "assignment deed) was found in the dispute description. "
+        "Please verify this reflects the actual facts before proceeding "
+        "\u2014 the generated report may incorrectly cite contractual provisions "
+        "(e.g. Section 73, Indian Contract Act) for what appears to be a "
+        "pure trademark infringement between unrelated parties."
+    )
+    return {"has_mismatch": True, "message": message}
+
+
+def assess_narrative_contradiction_severity(
+    narrative_warning: dict,
+    dispute_type: str,
+) -> tuple[bool, str]:
+    """Assess whether a narrative disagreement rises to MANUAL REVIEW severity.
+
+    Returns (requires_manual_review, review_reason).
+
+    Severity is HIGH (requires_manual_review=True) only when ALL of:
+      1. narrative_warning reports has_disagreement=True
+      2. At least one conflicting keyword belongs to _SEVERE_IN_REM_KEYWORDS
+         (i.e. the description explicitly mentions in rem statutory proceedings)
+      3. The dispute_type is on the arbitrable / in-personam path, meaning the
+         structured input would produce an ARBITRABLE verdict — making the
+         contradiction materially misleading rather than redundant.
+
+    The verdict is intentionally NOT changed here.  This function is purely
+    diagnostic and is designed to be unit-tested independently of the core
+    Booz Allen / Vidya Drolia logic.
+
+    Args:
+        narrative_warning: dict returned by check_narrative_disagreement().
+        dispute_type:      lower-cased dispute_type string from the dispute.
+
+    Returns:
+        A (bool, str) tuple: (requires_manual_review, review_reason).
+    """
+    if not narrative_warning.get("has_disagreement", False):
+        return False, ""
+
+    conflicting = narrative_warning.get("conflicting_keywords", [])
+    severe_hits = [
+        kw for kw in conflicting
+        if any(skw in kw or kw in skw for skw in _SEVERE_IN_REM_KEYWORDS)
+    ]
+    if not severe_hits:
+        return False, ""
+
+    # Only flag when the structured type would lead to an arbitrable verdict
+    type_is_arbitrable_path = any(
+        aw in dispute_type for aw in _ARBITRABLE_DISPUTE_TYPES
+    )
+    if not type_is_arbitrable_path:
+        # Disagreement exists but the type already routes to NOT ARBITRABLE —
+        # the amber narrative_warning footnote is sufficient.
+        return False, ""
+
+    severe_str = ", ".join(f'"{k}"' for k in severe_hits)
+    review_reason = (
+        f"The dispute description contains strong in rem statutory language "
+        f"({severe_str}) that is associated with non-arbitrable proceedings "
+        f"(e.g. cancellation / rectification before the Trade Marks Registry or "
+        f"Intellectual Property Appellate Board). The structured dispute type "
+        f"'{dispute_type}' routes this matter to an ARBITRABLE verdict, creating "
+        f"a material contradiction. HUMAN REVIEW IS REQUIRED before relying on "
+        f"this determination — the actual dispute may concern an in rem statutory "
+        f"proceeding that cannot be referred to arbitration."
+    )
+    return True, review_reason
+
+
 def check_arbitrability(dispute: dict) -> ArbitrabilityResult:
     """Main arbitrability determination. Returns ArbitrabilityResult."""
     booz_allen_result = apply_booz_allen_test(dispute)
     vidya_drolia_result = apply_vidya_drolia_test(dispute)
     narrative_warning = check_narrative_disagreement(dispute)
 
+    # Severity assessment — isolated, verdict-neutral
+    requires_manual_review, review_reason = assess_narrative_contradiction_severity(
+        narrative_warning, dispute_type=dispute.get("dispute_type", "").lower()
+    )
+
+    # Contract-narrative mismatch — purely informational, no verdict impact
+    contract_narrative_mismatch = check_contract_narrative_mismatch(dispute)
+
     has_arbitration_clause = dispute.get("has_arbitration_clause", False)
     dispute_type = dispute.get("dispute_type", "").lower()
+
+    # -----------------------------------------------------------------------
+    # TEXT-BASED OVERRIDE: check whether the clause text itself contains
+    # exclusion language that contradicts the boolean flag.
+    # -----------------------------------------------------------------------
+    clause_contradicted, contradiction_snippet = _check_clause_contradiction(dispute)
 
     is_arbitrable = (
         booz_allen_result["passes"]
         and vidya_drolia_result["all_pass"]
         and has_arbitration_clause
+        and not clause_contradicted   # override: contradictory text voids the clause
     )
 
     # Determine status and right type
@@ -343,6 +588,11 @@ def check_arbitrability(dispute: dict) -> ArbitrabilityResult:
             )
         if not has_arbitration_clause:
             failed_tests.append("No arbitration clause present")
+        if clause_contradicted:
+            failed_tests.append(
+                f"Arbitration clause text contains exclusion language "
+                f"(\u201c{contradiction_snippet}\u201d) that negates the clause"
+            )
 
         reason = (
             f"The dispute between {dispute.get('party_a', 'Party A')} and "
@@ -370,4 +620,8 @@ def check_arbitrability(dispute: dict) -> ArbitrabilityResult:
         recommendation=recommendation,
         applicable_landmark=applicable_landmark,
         narrative_warning=narrative_warning,
+        clause_text_contradiction=clause_contradicted,
+        requires_manual_review=requires_manual_review,
+        review_reason=review_reason,
+        contract_narrative_mismatch=contract_narrative_mismatch,
     )

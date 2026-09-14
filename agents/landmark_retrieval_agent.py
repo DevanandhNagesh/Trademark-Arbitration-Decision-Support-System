@@ -1,12 +1,13 @@
 """Landmark case retrieval agent — ZERO LLM calls.
 
-Primary source  : iKanoon API (dynamic, live Indian case law)
-Fallback source : ChromaDB semantic search (local, offline)
-Final fallback  : Hard-coded LANDMARK_CASES registry
+Primary source  : ChromaDB semantic search (local RAG using all-MiniLM-L6-v2)
+Fallback source : Hard-coded LANDMARK_CASES registry
 
 All post-retrieval logic (deduplication, category reordering, Booz Allen
-indicator cleanup, arbitrability filtering) is unchanged from the ChromaDB
-version so the rest of the system sees an identical interface.
+indicator cleanup, arbitrability filtering) is applied uniformly so the
+rest of the system sees an identical interface.
+
+Note: iKanoon dynamic retrieval is temporarily disabled.
 """
 
 from __future__ import annotations
@@ -164,6 +165,42 @@ if not _disagreement_logger.handlers:
 
 # Minimum SVM confidence required to override the keyword heuristic.
 _HYBRID_CONFIDENCE_THRESHOLD = 0.55
+
+
+# ---------------------------------------------------------------------------
+# Category filter maps for hard ChromaDB pre-filtering (Stage 2 hubness fix)
+# ---------------------------------------------------------------------------
+
+# Maps the 5 canonical dispute_type labels (from _detect_dispute_type_hybrid)
+# to the LANDMARK_CASES category values that are *directly* relevant.
+# Statute/compendium categories ('statute', 'compendium') are excluded from
+# filtering — they are non-judgment reference material that should surface
+# regardless of dispute type.
+_DISPUTE_TYPE_TO_CATEGORIES: dict[str, list[str]] = {
+    "infringement":     ["trademark_similarity", "trademark_infringement"],
+    "brand_similarity": ["trademark_similarity", "trademark_infringement"],
+    "passing_off":      ["trademark_similarity", "trademark_infringement"],
+    "assignment":       ["trademark_assignment"],
+    "licensing":        ["trademark_licensing", "ipr_licensing"],
+    # fallback used when dispute_type is 'trademark' (keyword heuristic default)
+    "trademark":        ["trademark_similarity", "trademark_infringement",
+                         "trademark_territoriality"],
+}
+
+# When too few results survive the primary category filter, widen by adding
+# these adjacent categories (one level of broadening before removing filter).
+_CATEGORY_ADJACENCY: dict[str, list[str]] = {
+    "infringement":     ["trademark_territoriality", "arbitrability"],
+    "brand_similarity": ["trademark_territoriality", "arbitrability"],
+    "passing_off":      ["trademark_territoriality", "arbitrability"],
+    "assignment":       ["trademark_licensing", "ipr_licensing", "arbitrability"],
+    "licensing":        ["trademark_assignment", "arbitrability"],
+    "trademark":        ["trademark_assignment", "trademark_licensing",
+                         "ipr_licensing", "arbitrability"],
+}
+
+# Known hub case_keys to monitor in debug logs.
+_HUB_CASE_KEYS: frozenset[str] = frozenset({"hms_mauritz", "marico_parachute"})
 
 
 def _detect_dispute_type_hybrid(
@@ -518,27 +555,121 @@ def _get_chroma_collection():
 def _retrieve_via_chromadb(
     dispute_description: str,
     n_results: int,
+    citation_survey_action: str = "keep",
+    dispute_type_label: str = "",
 ) -> list[LandmarkMatch]:
-    """Semantic search via local ChromaDB — unchanged from original agent."""
+    """Semantic search via local ChromaDB with hard category pre-filter.
+
+    The ``where`` clause restricts ChromaDB candidates to chunks whose
+    ``category`` metadata field matches the dispute's classified category.
+    This prevents hub cases (e.g. hms_mauritz, marico_parachute) whose
+    embeddings sit close to the corpus centroid from appearing in the
+    top-N results for unrelated dispute categories.
+
+    Widening strategy
+    -----------------
+    If the primary category filter yields fewer than ``n_results`` distinct
+    case_keys, one adjacent category layer is added (see
+    ``_CATEGORY_ADJACENCY``). Only if that also fails does the filter drop
+    entirely, so the existing fallback registry path (get_fallback_landmarks)
+    remains the last resort.
+
+    Separation of concerns
+    ----------------------
+    This function is responsible for *narrowing candidates at query time*.
+    ``_reorder_by_dispute_category()`` (called post-retrieval in
+    ``retrieve_landmarks``) is responsible for *tie-breaking within the
+    already-filtered set*. Their responsibilities are deliberately separate
+    and non-conflicting.
+    """
     collection = _get_chroma_collection()
-    query_n = max(n_results * 3, 10)
+    query_n = max(n_results * 4, 20)
+
+    # ── Resolve the canonical dispute type label ─────────────────────
+    dtype = _normalise_label(dispute_type_label) if dispute_type_label.strip() else "trademark"
+    primary_cats = _DISPUTE_TYPE_TO_CATEGORIES.get(dtype, [])
+
+    # ── Build the where filter ────────────────────────────────────────
+    # citation_survey_action=="exclude" already used {"chunk_type": "substantive"}.
+    # We now AND that with the category filter using ChromaDB's $and operator.
+    def _build_where(cats: list[str], exclude_surveys: bool) -> Optional[dict]:
+        """Build a ChromaDB where clause combining category + optional chunk_type."""
+        conditions = []
+        if cats:
+            if len(cats) == 1:
+                conditions.append({"category": {"$eq": cats[0]}})
+            else:
+                conditions.append({"category": {"$in": cats}})
+        if exclude_surveys:
+            conditions.append({"chunk_type": {"$eq": "substantive"}})
+        if not conditions:
+            return None
+        if len(conditions) == 1:
+            return conditions[0]
+        return {"$and": conditions}
+
+    exclude_surveys = citation_survey_action == "exclude"
+
+    # ── Query with primary category filter ───────────────────────────
+    where_filter = _build_where(primary_cats, exclude_surveys)
     results = collection.query(
         query_texts=[dispute_description],
         n_results=query_n,
+        where=where_filter,
     )
 
+    # ── Count distinct case_keys that survived ───────────────────────
+    surviving_keys: set[str] = {
+        results["metadatas"][0][i].get("case_key", "")
+        for i in range(len(results["ids"][0]))
+        if results["metadatas"][0][i].get("case_key", "") in LANDMARK_CASES
+    }
+
+    logger.debug(
+        "[chroma_filter] dtype=%r  primary_cats=%s  surviving_distinct_keys=%d",
+        dtype, primary_cats, len(surviving_keys),
+    )
+
+    # ── Widen to adjacent categories if too few results ──────────────
+    if len(surviving_keys) < n_results and primary_cats:
+        adjacent_cats = _CATEGORY_ADJACENCY.get(dtype, [])
+        widened_cats = list(dict.fromkeys(primary_cats + adjacent_cats))  # dedup, preserve order
+        where_widened = _build_where(widened_cats, exclude_surveys)
+        results = collection.query(
+            query_texts=[dispute_description],
+            n_results=query_n,
+            where=where_widened,
+        )
+        surviving_keys = {
+            results["metadatas"][0][i].get("case_key", "")
+            for i in range(len(results["ids"][0]))
+            if results["metadatas"][0][i].get("case_key", "") in LANDMARK_CASES
+        }
+        logger.info(
+            "[chroma_filter] Primary filter gave %d keys; widened to %s → %d keys",
+            len(surviving_keys), widened_cats, len(surviving_keys),
+        )
+
+    # ── Build LandmarkMatch list ─────────────────────────────────────
     seen_case_keys: set[str] = set()
     matches: list[LandmarkMatch] = []
 
     for i in range(len(results["ids"][0])):
         case_key = results["metadatas"][0][i].get("case_key", "unknown")
-        if case_key in seen_case_keys or case_key not in LANDMARK_CASES:
+        if case_key not in LANDMARK_CASES:
             continue
-        seen_case_keys.add(case_key)
 
         distance   = results["distances"][0][i]
         similarity = 1 - distance
-        info       = LANDMARK_CASES[case_key]
+
+        # Apply downweighting penalty to citation surveys if configured
+        chunk_type = results["metadatas"][0][i].get("chunk_type", "substantive")
+        if citation_survey_action == "downweight" and chunk_type == "citation_survey":
+            prev_similarity = similarity
+            similarity = similarity * 0.80
+            print(f"[DEBUG DOWNWEIGHT] Query: '{dispute_description[:30]}...' | Case: {case_key} | Chunk: {results['ids'][0][i]} | Raw Similarity: {prev_similarity:.4f} | Downweighted Similarity: {similarity:.4f}")
+
+        info = LANDMARK_CASES[case_key]
 
         matches.append(LandmarkMatch(
             case_key=case_key,
@@ -552,11 +683,23 @@ def _retrieve_via_chromadb(
             category=info["category"],
         ))
 
-    return matches
+    # Re-sort matches by similarity score (since downweighting can alter rankings)
+    if citation_survey_action == "downweight":
+        matches.sort(key=lambda m: m.similarity_score, reverse=True)
+
+    # Perform key deduplication to respect revised ranking order
+    final_matches: list[LandmarkMatch] = []
+    seen_dedup = set()
+    for m in matches:
+        if m.case_key not in seen_dedup:
+            final_matches.append(m)
+            seen_dedup.add(m.case_key)
+
+    return final_matches
 
 
 # ---------------------------------------------------------------------------
-# Public interface — retrieve_landmarks (signature unchanged)
+# Public interface — retrieve_landmarks (signature unchanged except optional action)
 # ---------------------------------------------------------------------------
 
 def retrieve_landmarks(
@@ -564,15 +707,15 @@ def retrieve_landmarks(
     arbitrability_result=None,
     n_results: int = 3,
     dispute_type_label: str = "",
+    citation_survey_action: str = "keep",
 ) -> List[LandmarkMatch]:
     """
     Retrieve top landmark cases for the given dispute description.
 
     Retrieval order
     ---------------
-    1. iKanoon API          — live, dynamic Indian case law
-    2. ChromaDB             — local semantic search (offline fallback)
-    3. get_fallback_landmarks() — hard-coded registry (last resort)
+    1. ChromaDB (SBERT RAG)     — primary local semantic search
+    2. get_fallback_landmarks() — hard-coded registry fallback (safe degradation)
 
     All post-retrieval logic (Booz Allen cleanup, category reordering,
     arbitrability filtering, supplement from fallback) is applied uniformly
@@ -581,26 +724,59 @@ def retrieve_landmarks(
     matches: list[LandmarkMatch] = []
     seen_case_keys: set[str] = set()
 
-    # ── 1. Primary: iKanoon ──────────────────────────────────────────
-    ikanoon_ok = False
+    # TEMPORARILY DISABLED: iKanoon retrieval
+    # ikanoon_ok = False
+    # try:
+    #     matches = _retrieve_via_ikanoon(dispute_description, n_results, dispute_type_label)
+    #     seen_case_keys = {m.case_key for m in matches}
+    #     ikanoon_ok = True
+    #     logger.info(f"[landmark_retrieval] iKanoon returned {len(matches)} results.")
+    # except Exception as ik_err:
+    #     logger.warning(f"[landmark_retrieval] iKanoon failed: {ik_err}. Trying ChromaDB...")
+
+    # ── 1. Primary: ChromaDB (Sentence-BERT RAG) ─────────────────────
+    chroma_ok = False
     try:
-        matches = _retrieve_via_ikanoon(dispute_description, n_results, dispute_type_label)
+        matches = _retrieve_via_chromadb(
+            dispute_description, n_results, citation_survey_action,
+            dispute_type_label=dispute_type_label,
+        )
         seen_case_keys = {m.case_key for m in matches}
-        ikanoon_ok = True
-        logger.info(f"[landmark_retrieval] iKanoon returned {len(matches)} results.")
-    except Exception as ik_err:
-        logger.warning(f"[landmark_retrieval] iKanoon failed: {ik_err}. Trying ChromaDB...")
+        chroma_ok = True
+        logger.info(
+            "[landmark_retrieval] ChromaDB primary search returned %d results.",
+            len(matches),
+        )
 
-    # ── 2. Secondary: ChromaDB ───────────────────────────────────────
-    if not ikanoon_ok:
-        try:
-            matches = _retrieve_via_chromadb(dispute_description, n_results)
-            seen_case_keys = {m.case_key for m in matches}
-            logger.info(f"[landmark_retrieval] ChromaDB returned {len(matches)} results.")
-        except Exception as chroma_err:
-            logger.warning(f"[landmark_retrieval] ChromaDB failed: {chroma_err}. Using registry fallback.")
+        # ── Hub monitoring debug log ─────────────────────────────────
+        # Records whether known hub cases appear in the top-3 for the
+        # current query's dispute type. Fires only when they DO appear,
+        # so silence means the filter is working correctly.
+        dtype_for_log = _normalise_label(dispute_type_label) if dispute_type_label.strip() else "trademark"
+        expected_cats = _DISPUTE_TYPE_TO_CATEGORIES.get(dtype_for_log, [])
+        for pos, m in enumerate(matches[:3], start=1):
+            if m.case_key in _HUB_CASE_KEYS:
+                hub_is_expected = m.category in expected_cats
+                if not hub_is_expected:
+                    logger.warning(
+                        "[hub_monitor] Hub case %r (category=%r) at rank %d "
+                        "for dispute_type=%r (expected_cats=%s). "
+                        "Category filter may not have fired (check ChromaDB rebuild).",
+                        m.case_key, m.category, pos, dtype_for_log, expected_cats,
+                    )
+                else:
+                    logger.debug(
+                        "[hub_monitor] %r at rank %d is within expected categories %s — OK.",
+                        m.case_key, pos, expected_cats,
+                    )
 
-    # ── 3. Supplement if still below n_results ───────────────────────
+    except Exception as chroma_err:
+        logger.warning(
+            "[landmark_retrieval] ChromaDB primary search failed: %s. Using registry fallback.",
+            chroma_err,
+        )
+
+    # ── 2. Supplement / Fallback: Registry fallback ──────────────────
     if len(matches) < n_results:
         fallback = get_fallback_landmarks(arbitrability_result)
         for fb in fallback:

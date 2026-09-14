@@ -168,6 +168,15 @@ export function displayResults(data, expandCallback, resetCallback) {
         warningBanner.style.display = "none";
     }
 
+    const contractMismatchBanner = document.getElementById("contractMismatchBanner");
+    const contractMismatchMessage = document.getElementById("contractMismatchMessage");
+    if (data.contract_narrative_mismatch && data.contract_narrative_mismatch.has_mismatch) {
+        contractMismatchMessage.textContent = data.contract_narrative_mismatch.message;
+        contractMismatchBanner.style.display = "block";
+    } else {
+        contractMismatchBanner.style.display = "none";
+    }
+
     const fallbackBadge = document.getElementById("fallbackWarningBadge");
     const liveBadge = document.getElementById("liveAnalysisBadge");
     if (data.generation_method === "fallback") {

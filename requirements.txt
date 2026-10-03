@@ -10,3 +10,7 @@ python-multipart
 aiofiles
 openai
 langdetect
+sqlalchemy
+passlib
+python-jose
+bcrypt

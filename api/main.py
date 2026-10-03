@@ -9,7 +9,7 @@ sys.path.insert(0, PROJECT_ROOT)
 
 import pydantic_v1_compat  # noqa: F401 — must be before chromadb
 
-from fastapi import FastAPI, Form, HTTPException, Depends, Request
+from fastapi import FastAPI, Form, HTTPException, Depends, Request, status
 from fastapi.responses import FileResponse, JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
@@ -18,6 +18,15 @@ import time
 
 from config import OUTPUT_DIR, ALLOWED_ORIGINS
 from logging_config import logger
+from db import init_db, get_db, User
+from auth import (
+    get_password_hash,
+    verify_password,
+    create_access_token,
+    get_current_user,
+    require_admin,
+    VALID_ROLES,
+)
 from agents.arbitrability_agent import check_arbitrability
 from agents.landmark_retrieval_agent import retrieve_landmarks, analyze_landmark_applicability
 from agents.gemini_agents import (
@@ -34,6 +43,10 @@ from agents.lawyer_finder_agent import (
     find_nearby_lawyers,
     find_lawyers_by_coordinates,
 )
+from sqlalchemy.orm import Session
+
+# Initialize database schema
+init_db()
 
 app = FastAPI(
     title="Trademark Arbitration Decision Support System",
@@ -80,6 +93,127 @@ async def serve_frontend():
     return FileResponse(frontend_path, media_type="text/html")
 
 
+@app.get("/auth")
+@app.get("/auth.html")
+async def serve_auth_page():
+    """Serve the authentication login/signup page."""
+    auth_page = os.path.join(PROJECT_ROOT, "frontend", "auth.html")
+    if not os.path.exists(auth_page):
+        raise HTTPException(status_code=404, detail="Auth page not found")
+    return FileResponse(auth_page, media_type="text/html")
+
+
+# ── Authentication Endpoints ──────────────────────────────────────────
+
+@app.post("/auth/signup")
+async def signup(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Register a new user account with role (lawyer, company, admin)."""
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        body = await request.json()
+        email = str(body.get("email", "")).strip().lower()
+        password = str(body.get("password", ""))
+        role = str(body.get("role", "lawyer")).strip().lower()
+    else:
+        form_data = await request.form()
+        email = str(form_data.get("email", "")).strip().lower()
+        password = str(form_data.get("password", ""))
+        role = str(form_data.get("role", "lawyer")).strip().lower()
+
+    if not email or "@" not in email:
+        raise HTTPException(status_code=400, detail="A valid email address is required.")
+    if not password or len(password) < 6:
+        raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
+    if role not in VALID_ROLES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid role '{role}'. Allowed roles: {list(VALID_ROLES)}",
+        )
+
+    existing_user = db.query(User).filter(User.email == email).first()
+    if existing_user:
+        raise HTTPException(status_code=400, detail="An account with this email already exists.")
+
+    hashed_password = get_password_hash(password)
+    new_user = User(email=email, hashed_password=hashed_password, role=role)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+
+    access_token = create_access_token(data={"sub": new_user.email, "role": new_user.role})
+
+    return {
+        "status": "success",
+        "message": "User registered successfully.",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": new_user.to_dict(),
+    }
+
+
+@app.post("/auth/login")
+async def login(
+    request: Request,
+    db: Session = Depends(get_db),
+):
+    """Authenticate user credentials and issue JWT token."""
+    content_type = request.headers.get("content-type", "")
+    if "application/json" in content_type:
+        body = await request.json()
+        email = str(body.get("email", "")).strip().lower()
+        password = str(body.get("password", ""))
+    else:
+        form_data = await request.form()
+        email = str(form_data.get("email", "")).strip().lower()
+        password = str(form_data.get("password", ""))
+
+    if not email or not password:
+        raise HTTPException(status_code=400, detail="Email and password are required.")
+
+    user = db.query(User).filter(User.email == email).first()
+    if not user or not verify_password(password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid email or password.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+    access_token = create_access_token(data={"sub": user.email, "role": user.role})
+
+    return {
+        "status": "success",
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": user.to_dict(),
+    }
+
+
+@app.get("/auth/me")
+async def get_current_user_profile(
+    current_user: User = Depends(get_current_user),
+):
+    """Get profile of current authenticated user."""
+    return {"status": "success", "user": current_user.to_dict()}
+
+
+@app.get("/admin/users")
+async def list_users_admin(
+    admin_user: User = Depends(require_admin),
+    db: Session = Depends(get_db),
+):
+    """Admin-only endpoint: list all registered users."""
+    users = db.query(User).all()
+    return {
+        "status": "success",
+        "admin": admin_user.email,
+        "count": len(users),
+        "users": [u.to_dict() for u in users],
+    }
+
+
 @app.post("/analyze")
 async def analyze_dispute(
     party_a: str = Form(...),
@@ -91,9 +225,11 @@ async def analyze_dispute(
     right_source: str = Form(...),
     affects_third_parties: str = Form(...),
     dispute_description: str = Form(...),
+    current_user: User = Depends(get_current_user),
 ):
-    """Analyze a trademark dispute and generate DSS report."""
+    """Analyze a trademark dispute and generate DSS report (Requires Authentication)."""
     try:
+        logger.info(f"Analysis initiated by user: {current_user.email} (Role: {current_user.role})")
         # Parse boolean fields (form sends strings)
         has_contract_bool = has_contract.lower() in ("true", "yes", "1")
         has_arb_clause_bool = has_arbitration_clause.lower() in ("true", "yes", "1")

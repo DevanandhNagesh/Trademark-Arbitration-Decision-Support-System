@@ -107,7 +107,15 @@
 
             <div class="topbar">
                 <div class="title">Trademark Arbitration Decision Support System</div>
-                <button class="new-btn" id="newAnalysisBtn" aria-label="Start new dispute analysis">New Analysis</button>
+                <div style="display: flex; align-items: center; gap: 12px;">
+                    <div id="userNavSection" class="user-nav-badge" style="display: none;">
+                        <span id="userEmailBadge" class="user-email-text"></span>
+                        <span id="userRoleBadge" class="user-role-pill"></span>
+                        <button type="button" class="auth-action-btn" id="logoutBtn" aria-label="Sign out of system">Sign Out</button>
+                    </div>
+                    <a href="/auth.html" id="loginLinkBtn" class="auth-action-btn" style="text-decoration: none;">Sign In</a>
+                    <button class="new-btn" id="newAnalysisBtn" aria-label="Start new dispute analysis">New Analysis</button>
+                </div>
             </div>
 
             <section class="card" id="formCard">

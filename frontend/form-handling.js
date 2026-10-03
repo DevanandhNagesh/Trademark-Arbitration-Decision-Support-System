@@ -25,6 +25,53 @@ const disclaimerModalOverlay = document.getElementById("disclaimerModalOverlay")
 const disclaimerAgreeBtn = document.getElementById("disclaimerAgreeBtn");
 const DISCLAIMER_STORAGE_KEY = "dss_disclaimer_acknowledged";
 
+const TOKEN_KEY = "dss_token";
+const USER_KEY = "dss_user";
+
+export function getAuthToken() {
+    return sessionStorage.getItem(TOKEN_KEY);
+}
+
+export function getCurrentUser() {
+    try {
+        const raw = sessionStorage.getItem(USER_KEY);
+        return raw ? JSON.parse(raw) : null;
+    } catch (e) {
+        return null;
+    }
+}
+
+export function updateAuthNavUI() {
+    const userSection = document.getElementById("userNavSection");
+    const loginLink = document.getElementById("loginLinkBtn");
+    const userEmailBadge = document.getElementById("userEmailBadge");
+    const userRoleBadge = document.getElementById("userRoleBadge");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    const user = getCurrentUser();
+    const token = getAuthToken();
+
+    if (token && user) {
+        if (userSection) userSection.style.display = "flex";
+        if (loginLink) loginLink.style.display = "none";
+        if (userEmailBadge) userEmailBadge.textContent = user.email || "Counsel";
+        if (userRoleBadge) userRoleBadge.textContent = user.role || "lawyer";
+    } else {
+        if (userSection) userSection.style.display = "none";
+        if (loginLink) loginLink.style.display = "inline-block";
+    }
+
+    if (logoutBtn && !logoutBtn._hasLogoutListener) {
+        logoutBtn._hasLogoutListener = true;
+        logoutBtn.addEventListener("click", () => {
+            sessionStorage.removeItem(TOKEN_KEY);
+            sessionStorage.removeItem(USER_KEY);
+            updateAuthNavUI();
+            window.location.href = "/auth.html";
+        });
+    }
+}
+
 export function isDisclaimerAcknowledged() {
     return sessionStorage.getItem(DISCLAIMER_STORAGE_KEY) === "true";
 }
@@ -149,6 +196,7 @@ export function initFormHandling() {
     }
 
     updateDisclaimerUI();
+    updateAuthNavUI();
 
     disputeDesc.addEventListener("input", () => {
         const len = disputeDesc.value.length;
@@ -161,6 +209,13 @@ export function initFormHandling() {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+
+        const token = getAuthToken();
+        if (!token) {
+            alert("Authentication required. Please sign in to analyze disputes.");
+            window.location.href = "/auth.html";
+            return;
+        }
 
         if (!isDisclaimerAcknowledged()) {
             updateDisclaimerUI();
@@ -198,8 +253,21 @@ export function initFormHandling() {
 
             const response = await fetch("/analyze", {
                 method: "POST",
+                headers: {
+                    "Authorization": `Bearer ${token}`
+                },
                 body: formData
             });
+
+            if (response.status === 401) {
+                sessionStorage.removeItem(TOKEN_KEY);
+                sessionStorage.removeItem(USER_KEY);
+                updateAuthNavUI();
+                alert("Your session has expired or is unauthorized. Please sign in again.");
+                window.location.href = "/auth.html";
+                return;
+            }
+
             const data = await response.json();
 
             if (!response.ok || data.status !== "success") {

@@ -7,6 +7,48 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+    <!-- Disclaimer Modal (Gated before interaction) -->
+    <div class="disclaimer-modal-overlay" id="disclaimerModalOverlay" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle" aria-describedby="disclaimerDesc">
+        <div class="disclaimer-modal">
+            <div class="disclaimer-modal-badge">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path>
+                    <line x1="12" y1="9" x2="12" y2="13"></line>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+                <span>LEGAL DISCLAIMER & TERMS OF USE</span>
+            </div>
+            <h2 class="disclaimer-modal-title" id="disclaimerTitle">Trademark Arbitration Decision Support System</h2>
+            <div class="disclaimer-modal-body" id="disclaimerDesc">
+                <p class="disclaimer-intro">
+                    Please read and acknowledge the following operational limitations and legal terms before using this Decision Support System:
+                </p>
+                <ul class="disclaimer-list">
+                    <li>
+                        <strong>AI-Based Decision Support:</strong> This system uses artificial intelligence and large language models (LLMs) to perform automated legal analysis, arbitrability evaluation, and issue formulation.
+                    </li>
+                    <li>
+                        <strong>Curated / Limited Case Corpus:</strong> Case law retrieval and statutory recommendations are grounded in a specialized, finite corpus of Indian trademark and arbitration decisions and do not cover all legal precedents.
+                    </li>
+                    <li>
+                        <strong>Potential for Inaccuracies:</strong> AI-generated reasoning, findings, and award frameworks may contain errors, hallucinations, or incomplete statutory interpretations.
+                    </li>
+                    <li>
+                        <strong>Not Professional Legal Advice:</strong> This application is strictly an informational and assistive tool for arbitrators and legal practitioners. It is not a substitute for qualified legal counsel or independent judicial adjudication.
+                    </li>
+                    <li>
+                        <strong>No Liability:</strong> The system and its creators assume no responsibility or liability for any legal claims, strategic decisions, awards, or outcomes resulting from the use of this software.
+                    </li>
+                </ul>
+            </div>
+            <div class="disclaimer-modal-footer">
+                <button type="button" class="disclaimer-agree-btn" id="disclaimerAgreeBtn" aria-label="I Understand and Agree to the disclaimer terms">
+                    I Understand and Agree
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="app">
         <aside class="sidebar">
             <div class="brand">

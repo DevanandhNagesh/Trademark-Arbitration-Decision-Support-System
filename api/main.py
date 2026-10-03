@@ -28,6 +28,7 @@ from agents.gemini_agents import (
     master_legal_analysis,
 )
 from agents.adversarial_legal_agent import generate_adversarial_analysis
+from agents.citation_verifier import verify_citations
 from agents.report_generator import generate_dss_report
 from agents.lawyer_finder_agent import (
     find_nearby_lawyers,
@@ -155,7 +156,14 @@ async def analyze_dispute(
         adv_method = adversarial_analysis.get("generation_method", "live")
         generation_methods["adversarial"] = adv_method
 
-        # 9. Generate Word document report
+        # 6. Verify case citations against landmark matches and registry
+        citation_verifications = verify_citations(
+            statutory_provisions=legal_principles,
+            adversarial_analysis=adversarial_analysis,
+            landmark_matches=landmark_matches,
+        )
+
+        # 7. Generate Word document report
         filepath = generate_dss_report(
             dispute,
             extracted_facts,
@@ -167,6 +175,7 @@ async def analyze_dispute(
             award_framework,
             adversarial_analysis,
             generation_methods=generation_methods,
+            citation_verifications=citation_verifications,
         )
 
         filename = os.path.basename(filepath)
@@ -202,6 +211,7 @@ async def analyze_dispute(
                 "issues_count": len(issues),
                 "adversarial_summary": adversarial_summary,
                 "adversarial_preview": adversarial_preview,
+                "citation_verifications": citation_verifications,
                 "narrative_warning": arbitrability_result.narrative_warning,
                 "requires_manual_review": arbitrability_result.requires_manual_review,
                 "review_reason": arbitrability_result.review_reason,

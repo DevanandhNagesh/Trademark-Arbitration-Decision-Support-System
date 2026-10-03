@@ -457,8 +457,7 @@ PATH 1 — If Arbitrability Status = "NOT ARBITRABLE":
   Return JSON with these exact keys:
 
   jurisdiction_finding:
-    One paragraph stating clearly that this tribunal lacks jurisdiction.
-    The dispute is referred to the competent civil court.
+    One paragraph stating clearly that this dispute is not arbitrable and recommending referral to the competent civil court.
     State which court has jurisdiction (District Court / Commercial Court / High Court original side) based on the relief amount claimed.
     If damages claimed exceed Rs 3 lakhs reference the Commercial Courts Act 2015.
     Do NOT use arbitration language in this paragraph.
@@ -488,29 +487,66 @@ PATH 1 — If Arbitrability Status = "NOT ARBITRABLE":
   operative_portion_template:
     Must be titled "COURT REFERRAL DIRECTION" not "OPERATIVE PORTION"
     Content:
-    "This matter is NOT ARBITRABLE and is referred to the competent [Commercial Court / High Court] for adjudication. The following issues are recommended for determination: [list issues]. The Claimant may seek the following interim reliefs pending final disposal:
-    1. Ad-interim injunction restraining [Party B] from using [TRADEMARK B] — [GRANTED / REFUSED]
+    "The Decision Support System's analysis indicates that this matter is NOT ARBITRABLE and recommends referral to the competent [Commercial Court / High Court] for adjudication. The following issues are recommended for judicial determination: [list issues]. The Claimant may seek the following interim reliefs pending final disposal:
+    1. Ad-interim injunction restraining [Party B] from using [TRADEMARK B] — [RECOMMENDED / NOT RECOMMENDED]
     2. [BLANK — any other interim relief]
-    This referral is made on [BLANK] day of [BLANK] [YEAR]."
+    This referral recommendation is generated on [BLANK] day of [BLANK] [YEAR]."
     Do NOT use "In the matter of arbitration between..."
     Do NOT use "costs of this arbitration"
     Do NOT use "Sole Arbitrator" in signature block
+    Do NOT use authority-voice words like "The Court hereby orders" or "It is ordered"
 
 PATH 2 — If Arbitrability Status = "ARBITRABLE":
 
-  Return JSON with the same structure but for the arbitral tribunal.
+  Return JSON with these exact keys:
 
-    finding_options for EVERY issue must follow this rule:
-    Option A must start with the statute:
-        "Under Section [X] of [Act], [Respondent] HAS [finding] as interpreted in [Case Citation]."
-    Option B must start with the statute:
-        "Under Section [X] of [Act], [Respondent] has NOT [finding] and the claim fails."
-  NEVER use: "It is held that the question of..."
-  NEVER use: "is answered in the negative" as the entire option
-  NEVER end an option with a question mark
-  NEVER repeat the issue text verbatim inside the option
-  Maximum 2 sentences per option
-  Each option must be a complete declarative sentence
+  jurisdiction_finding:
+    One paragraph stating that the Decision Support System's analysis suggests the arbitral tribunal possesses jurisdiction to adjudicate the dispute.
+    State that the dispute arises from a contractual relationship between the parties and involves rights in personam under the Arbitration and Conciliation Act 1996.
+    Use system-voice framing (e.g., "The Decision Support System's analysis suggests that the arbitral tribunal has jurisdiction...").
+
+  findings_on_issues:
+    For each of the {len(issues)} issues:
+    - issue_number: sequential integer
+    - issue: the issue text
+    - applicable_law: relevant sections of Trade Marks Act 1999 and Arbitration and Conciliation Act 1996
+    - finding_options: exactly 2 options starting with statute:
+        Option A: "Under Section [X] of [Act], [Respondent] HAS [finding] as interpreted in [Case Citation]."
+        Option B: "Under Section [X] of [Act], [Respondent] has NOT [finding] and the claim fails."
+      NEVER use authority-voice phrasing such as "The Tribunal finds", "The Tribunal hereby declares", "the Tribunal awards", or "The Tribunal holds".
+      Use system-voice or objective statutory declarative sentences only.
+      NEVER use: "It is held that the question of..."
+      NEVER use: "is answered in the negative" as the entire option
+      NEVER end an option with a question mark
+      NEVER repeat the issue text verbatim inside the option
+      Maximum 2 sentences per option
+
+  relief_section:
+    injunction_applicable: true or false
+    injunction_guidance: guidance text on injunctive relief
+    damages_applicable: true or false
+    damages_guidance: guidance text on damages / account of profits assessment
+    costs_guidance: guidance text on costs under Arbitration and Conciliation Act 1996
+
+  operative_portion_template:
+    Must use SYSTEM-VOICE FRAMING throughout.
+    CRITICAL: NEVER use tribunal/authority phrases such as "The Tribunal hereby declares", "The Tribunal finds", "the Tribunal awards", "The Tribunal [HOLDS/DOES NOT HOLD]", or "The Tribunal orders".
+    Instead, use system-voice framing such as:
+    - "The Decision Support System's analysis suggests that..."
+    - "The Decision Support System indicates a likely finding that..."
+    - "The Decision Support System assessment indicates [Party B] [HAS/HAS NOT] infringed..."
+    Format example:
+    "DECISION SUPPORT SYSTEM — AWARD RECOMMENDATION FRAMEWORK
+
+    In the analysis of the dispute between [Party A] (Claimant) and [Party B] (Respondent) concerning trademark '[TRADEMARK]':
+
+    1. The Decision Support System's analysis suggests that the arbitral tribunal [HAS/DOES NOT HAVE] jurisdiction.
+    2. The Decision Support System indicates a likely finding that the Respondent [HAS/HAS NOT] infringed the trademark rights of the Claimant.
+    3. The Decision Support System's evaluation suggests the Claimant [IS/IS NOT] entitled to injunctive relief.
+    4. The assessment indicates potential damages/compensation assessed at [BLANK].
+    5. Costs allocation analysis suggests costs to be borne by [BLANK].
+
+    This recommendation framework is generated on [BLANK] day of [BLANK] [YEAR]."
 
 DISPUTE:
 - Claimant: {dispute.get('party_a', '')}
@@ -569,7 +605,7 @@ Return ONLY valid JSON, no explanation."""
 
         if status == "ARBITRABLE":
             jurisdiction_finding = (
-                f"This Tribunal has jurisdiction to adjudicate the present dispute "
+                f"The Decision Support System's analysis indicates that the arbitral tribunal has jurisdiction to adjudicate the present dispute "
                 f"between {party_a} and {party_b} concerning the trademark '{trademark}'. "
                 f"The dispute arises from a contractual relationship between the parties "
                 f"and involves rights in personam. The arbitration clause in the agreement "
@@ -577,7 +613,7 @@ Return ONLY valid JSON, no explanation."""
             )
         else:
             jurisdiction_finding = (
-                f"This dispute between {party_a} and {party_b} concerning the trademark "
+                f"The Decision Support System's analysis indicates that the dispute between {party_a} and {party_b} concerning the trademark "
                 f"'{trademark}' is NOT ARBITRABLE. The dispute involves rights in rem "
                 f"enforceable against the world at large and/or fails the fourfold test "
                 f"established in Vidya Drolia v. Durga Trading Corporation (2021). "
@@ -612,34 +648,33 @@ Return ONLY valid JSON, no explanation."""
 
         if status == "ARBITRABLE":
             operative_template = (
-                f"OPERATIVE PORTION\n\n"
-                f"In the matter of arbitration between {party_a} (Claimant) and "
+                f"DECISION SUPPORT SYSTEM — AWARD RECOMMENDATION FRAMEWORK\n\n"
+                f"In the analysis of the dispute between {party_a} (Claimant) and "
                 f"{party_b} (Respondent) concerning the trademark '{trademark}':\n\n"
-                f"1. The Tribunal [HOLDS/DOES NOT HOLD] that it has jurisdiction.\n"
-                f"2. The Respondent [HAS/HAS NOT] infringed the trademark rights of the Claimant.\n"
-                f"3. The Claimant [IS/IS NOT] entitled to injunctive relief.\n"
-                f"4. The Respondent shall pay [BLANK] as damages/compensation.\n"
-                f"5. The costs of this arbitration shall be borne by [BLANK].\n\n"
-                f"This award is made at [BLANK] on this [BLANK] day of [BLANK].\n\n"
+                f"1. The Decision Support System's analysis suggests that the arbitral tribunal [HAS/DOES NOT HAVE] jurisdiction.\n"
+                f"2. The Decision Support System indicates a likely finding that the Respondent [HAS/HAS NOT] infringed the trademark rights of the Claimant.\n"
+                f"3. The Decision Support System's evaluation suggests the Claimant [IS/IS NOT] entitled to injunctive relief.\n"
+                f"4. The assessment indicates potential damages/compensation assessed at [BLANK].\n"
+                f"5. Costs allocation analysis suggests costs to be borne by [BLANK].\n\n"
+                f"This recommendation framework is generated on [BLANK] day of [BLANK] [YEAR].\n\n"
                 f"________________________\n"
-                f"[Name of Arbitrator]\n"
-                f"Sole Arbitrator"
+                f"[Decision Support System Assessment / Presiding Arbitrator Review]"
             )
         else:
             operative_template = (
                 f"COURT REFERRAL DIRECTION\n\n"
-                f"This matter is NOT ARBITRABLE and is referred to the competent "
+                f"The Decision Support System's analysis indicates that this matter is NOT ARBITRABLE and recommends referral to the competent "
                 f"Commercial Court / High Court for adjudication.\n\n"
                 f"The following issues are recommended for determination:\n"
                 + "\n".join([f"{i+1}. {issue}" for i, issue in enumerate(issues)])
                 + f"\n\nThe Claimant {party_a} may seek the following interim reliefs "
                 f"pending final disposal:\n"
                 f"1. Ad-interim injunction restraining {party_b} from using the "
-                f"mark '{trademark}' — [GRANTED / REFUSED]\n"
+                f"mark '{trademark}' — [RECOMMENDED / NOT RECOMMENDED]\n"
                 f"2. [BLANK — any other interim relief]\n\n"
-                f"This referral is made on [BLANK] day of [BLANK] [YEAR].\n\n"
+                f"This referral recommendation is generated on [BLANK] day of [BLANK] [YEAR].\n\n"
                 f"________________________\n"
-                f"[Name of Presiding Officer]"
+                f"[Decision Support System Assessment / Reviewing Authority]"
             )
 
         return {
@@ -725,9 +760,15 @@ Perform all four tasks and return a single unified JSON object with all four sec
 
 Task 1. Extract dispute facts. Task 2. Frame legal issues. Task 3. Identify statutory provisions. Task 4. Generate award framework.
 
-If arbitrability_status is NOT ARBITRABLE, frame 4 substantive trademark issues for civil court and do NOT frame arbitrability issues.
-Reference Sections 29, 30, 135 of Trade Marks Act 1999 in the legal issues.
-If arbitrability_status is ARBITRABLE, frame 4 issues for the arbitral tribunal referencing the Trade Marks Act and Arbitration and Conciliation Act 1996.
+If arbitrability_status is NOT ARBITRABLE:
+- Frame 4 substantive trademark issues for civil court (referencing Sections 29, 30, 135 of Trade Marks Act 1999) and do NOT frame arbitrability issues.
+- In award_framework, jurisdiction_finding must state that the Decision Support System's analysis indicates the dispute is not arbitrable and recommends referral to the competent civil court.
+- operative_portion_template must be titled "COURT REFERRAL DIRECTION", stating the Decision Support System's analysis indicates the matter is not arbitrable and recommending referral to the competent Commercial Court / High Court. Avoid authority voice.
+
+If arbitrability_status is ARBITRABLE:
+- Frame 4 issues for the arbitral tribunal referencing the Trade Marks Act 1999 and Arbitration and Conciliation Act 1996.
+- In award_framework, jurisdiction_finding must state that the Decision Support System's analysis suggests the arbitral tribunal possesses jurisdiction over the contractual in personam dispute.
+- operative_portion_template must use SYSTEM-VOICE FRAMING throughout (e.g., "The Decision Support System's analysis suggests...", "The Decision Support System indicates a likely finding that..."). NEVER use authority-voice phrasing such as "The Tribunal hereby declares", "The Tribunal finds", "the Tribunal awards", or "The Tribunal [HOLDS/DOES NOT HOLD]".
 
 Finding options must be clean declarative sentences anchored to statute. No markdown formatting.
 
@@ -862,9 +903,9 @@ Return ONLY valid JSON. No markdown. No explanation. No json fences. Plain text 
 
         fallback_award = {
             "jurisdiction_finding": (
-                f"This tribunal has jurisdiction over the dispute between {party_a} and {party_b} concerning the trademark '{trademark}'."
+                f"The Decision Support System's analysis suggests that the arbitral tribunal has jurisdiction over the dispute between {party_a} and {party_b} concerning the trademark '{trademark}'."
                 if arbitrability_status == "ARBITRABLE"
-                else f"This dispute between {party_a} and {party_b} concerning the trademark '{trademark}' is not arbitrable and must be referred to the competent civil court."
+                else f"The Decision Support System's analysis indicates that the dispute between {party_a} and {party_b} concerning the trademark '{trademark}' is not arbitrable and recommends referral to the competent civil court."
             ),
             "findings_on_issues": [
                 {
@@ -885,7 +926,11 @@ Return ONLY valid JSON. No markdown. No explanation. No json fences. Plain text 
                 "damages_guidance": "Assess actual damages and account of profits.",
                 "costs_guidance": "Costs to follow the event.",
             },
-            "operative_portion_template": "Template for operative portion or court referral direction.",
+            "operative_portion_template": (
+                "The Decision Support System's analysis suggests that the arbitral tribunal has jurisdiction and indicates findings on trademark infringement and relief."
+                if arbitrability_status == "ARBITRABLE"
+                else "The Decision Support System's analysis indicates this matter is not arbitrable and recommends referral to the competent civil court."
+            ),
         }
 
         return {

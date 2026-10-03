@@ -21,6 +21,28 @@ const hasContractInput = document.getElementById("hasContractInput");
 const arbClauseInput = document.getElementById("arbClauseInput");
 const affectsThirdInput = document.getElementById("affectsThirdInput");
 
+const disclaimerModalOverlay = document.getElementById("disclaimerModalOverlay");
+const disclaimerAgreeBtn = document.getElementById("disclaimerAgreeBtn");
+const DISCLAIMER_STORAGE_KEY = "dss_disclaimer_acknowledged";
+
+export function isDisclaimerAcknowledged() {
+    return sessionStorage.getItem(DISCLAIMER_STORAGE_KEY) === "true";
+}
+
+export function updateDisclaimerUI() {
+    const acknowledged = isDisclaimerAcknowledged();
+    if (disclaimerModalOverlay) {
+        if (acknowledged) {
+            disclaimerModalOverlay.classList.add("hidden");
+        } else {
+            disclaimerModalOverlay.classList.remove("hidden");
+        }
+    }
+    if (submitBtn) {
+        submitBtn.disabled = !acknowledged;
+    }
+}
+
 const loadingMessages = [
     "Reviewing dispute details and party submissions...",
     "Determining arbitrability under Indian law...",
@@ -108,6 +130,7 @@ export function resetAll() {
     setTimelineInitial();
     charCount.textContent = "0 characters";
     charCount.classList.remove("low", "mid", "good");
+    updateDisclaimerUI();
     formCard.style.display = "block";
     formCard.scrollIntoView({ behavior: "smooth" });
 }
@@ -117,6 +140,15 @@ export function initFormHandling() {
     setToggleValue(document.querySelector('[data-toggle="has_contract"]'), hasContractInput);
     setToggleValue(document.querySelector('[data-toggle="has_arbitration_clause"]'), arbClauseInput);
     setToggleValue(document.querySelector('[data-toggle="affects_third_parties"]'), affectsThirdInput);
+
+    if (disclaimerAgreeBtn) {
+        disclaimerAgreeBtn.addEventListener("click", () => {
+            sessionStorage.setItem(DISCLAIMER_STORAGE_KEY, "true");
+            updateDisclaimerUI();
+        });
+    }
+
+    updateDisclaimerUI();
 
     disputeDesc.addEventListener("input", () => {
         const len = disputeDesc.value.length;
@@ -129,6 +161,12 @@ export function initFormHandling() {
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
+
+        if (!isDisclaimerAcknowledged()) {
+            updateDisclaimerUI();
+            alert("Please read and accept the Legal Disclaimer before generating a report.");
+            return;
+        }
 
         if (disputeDesc.value.length < 100) {
             alert("Dispute description must be at least 100 characters.");
@@ -188,7 +226,8 @@ export function initFormHandling() {
             document.getElementById("errorCard").style.display = "block";
             document.getElementById("errorCard").scrollIntoView({ behavior: "smooth" });
         } finally {
-            submitBtn.disabled = false;
+            const acknowledged = isDisclaimerAcknowledged();
+            submitBtn.disabled = !acknowledged;
             submitBtn.classList.remove("loading");
             submitBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18" /><path d="M6 20V8l6-4 6 4v12" /><path d="M9 20v-6h6v6" /></svg>Generate DSS Report';
         }

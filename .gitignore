@@ -62,3 +62,6 @@ scripts/filter_citation_heavy_chunks.py
 diagnose_retrieval_anamoly.py 
 diagnose_retrieval_anomaly.py 
 dss_users.db 
+frontend/assets/
+screenshot_audit.py
+test_frontend_fixes.py

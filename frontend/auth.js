@@ -48,6 +48,35 @@ if (tabLogin && tabSignup) {
     tabSignup.addEventListener("click", () => switchTab("signup"));
 }
 
+function getPostLoginRedirect() {
+    const params = new URLSearchParams(window.location.search);
+    const returnTo = params.get("returnTo");
+    if (returnTo) {
+        try {
+            const decoded = decodeURIComponent(returnTo).trim();
+            // Sanitize redirect target: must not be root / landing / auth pages
+            if (
+                decoded &&
+                decoded !== "/" &&
+                !decoded.includes("landing.html") &&
+                !decoded.includes("auth.html") &&
+                (decoded.startsWith("/") || decoded.endsWith(".html"))
+            ) {
+                return decoded;
+            }
+        } catch (e) {
+            console.error("Error decoding returnTo param:", e);
+        }
+    }
+    return "dashboard.html";
+}
+
+// Auto-switch to signup tab if URL has ?mode=signup
+const urlParams = new URLSearchParams(window.location.search);
+if (urlParams.get("mode") === "signup") {
+    switchTab("signup");
+}
+
 if (loginForm) {
     loginForm.addEventListener("submit", async (e) => {
         e.preventDefault();
@@ -77,13 +106,18 @@ if (loginForm) {
                 throw new Error(data.detail || "Invalid email or password.");
             }
 
+            // Synchronously store JWT tokens and user metadata
             sessionStorage.setItem(TOKEN_KEY, data.access_token);
+            sessionStorage.setItem("dss_jwt", data.access_token);
             sessionStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
+            const target = getPostLoginRedirect();
+            console.log(`[Auth] Login successful. Redirecting to: ${target}`);
             showAlert("Signed in successfully! Redirecting...", "success");
+
             setTimeout(() => {
-                window.location.href = "/";
-            }, 600);
+                window.location.href = target;
+            }, 250);
         } catch (err) {
             showAlert(err.message || "Failed to sign in. Please check your credentials.");
         } finally {
@@ -128,13 +162,18 @@ if (signupForm) {
                 throw new Error(data.detail || "Registration failed.");
             }
 
+            // Synchronously store JWT tokens and user metadata
             sessionStorage.setItem(TOKEN_KEY, data.access_token);
+            sessionStorage.setItem("dss_jwt", data.access_token);
             sessionStorage.setItem(USER_KEY, JSON.stringify(data.user));
 
+            const target = getPostLoginRedirect();
+            console.log(`[Auth] Registration successful. Redirecting to: ${target}`);
             showAlert("Account created successfully! Redirecting...", "success");
+
             setTimeout(() => {
-                window.location.href = "/";
-            }, 600);
+                window.location.href = target;
+            }, 250);
         } catch (err) {
             showAlert(err.message || "Registration failed. Please try again.");
         } finally {

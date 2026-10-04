@@ -1365,3 +1365,298 @@ a:focus-visible {
     border-color: var(--accent-gold);
     color: var(--accent-gold-light);
 }
+
+/* Global Gold Cursor-Follow Spotlight */
+#cursorGlow,
+.cursor-glow {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 480px;
+    height: 480px;
+    border-radius: 50%;
+    pointer-events: none;
+    transform: translate(-50%, -50%);
+    background: radial-gradient(circle, rgba(201, 168, 76, 0.08) 0%, rgba(201, 168, 76, 0.02) 40%, transparent 70%);
+    z-index: 9999;
+    mix-blend-mode: screen;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    will-change: transform;
+}
+
+/* Global Scroll Progress Bar */
+.scroll-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, #C9A84C, #E8C96A);
+    z-index: 10001;
+    transition: width 0.08s linear;
+    pointer-events: none;
+}
+
+/* Global Card Spotlight & Hover Depth */
+.card,
+.auth-card,
+.action-card,
+.disclaimer-modal,
+.bento-card,
+.use-case-card,
+.pipeline-step-card,
+.safety-panel,
+.brand {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.35s cubic-bezier(.16, .84, .44, 1), border-color 0.25s ease, box-shadow 0.35s cubic-bezier(.16, .84, .44, 1), background 0.25s ease;
+}
+
+.card:hover,
+.auth-card:hover {
+    transform: translateY(-4px);
+    border-color: rgba(201, 168, 76, 0.45);
+    box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45), 0 0 20px rgba(201, 168, 76, 0.1);
+}
+
+.card::after,
+.auth-card::after,
+.disclaimer-modal::after,
+.action-card::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: radial-gradient(circle 280px at var(--mx, -300px) var(--my, -300px), rgba(201, 168, 76, 0.10) 0%, transparent 80%);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+    pointer-events: none;
+    z-index: 1;
+}
+
+.card:hover::after,
+.auth-card:hover::after,
+.action-card:hover::after {
+    opacity: 1;
+}
+
+/* Global Button Magnetic Shimmer Sweep */
+.submit-btn,
+.new-btn,
+.auth-tab-btn,
+.auth-action-btn,
+.disclaimer-agree-btn,
+.download-btn,
+.btn-hero-primary,
+.btn-hero-secondary,
+.btn-gradient,
+.btn-outline,
+.nav-btn-create,
+.nav-btn-signin {
+    position: relative;
+    overflow: hidden;
+    transition: transform 0.25s cubic-bezier(.16, .84, .44, 1), border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+.submit-btn::before,
+.new-btn::before,
+.auth-action-btn::before,
+.disclaimer-agree-btn::before,
+.download-btn::before,
+.btn-hero-primary::before,
+.btn-hero-secondary::before,
+.btn-gradient::before,
+.btn-outline::before,
+.nav-btn-create::before,
+.nav-btn-signin::before {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -60%;
+    width: 40%;
+    height: 200%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), rgba(232, 201, 106, 0.3), transparent);
+    transform: rotate(25deg);
+    transition: transform 0.65s cubic-bezier(.16, .84, .44, 1);
+    pointer-events: none;
+    opacity: 0;
+    z-index: 2;
+}
+
+.submit-btn:hover::before,
+.new-btn:hover::before,
+.auth-action-btn:hover::before,
+.disclaimer-agree-btn:hover::before,
+.download-btn:hover::before,
+.btn-hero-primary:hover::before,
+.btn-hero-secondary:hover::before,
+.btn-gradient:hover::before,
+.btn-outline:hover::before,
+.nav-btn-create:hover::before,
+.nav-btn-signin:hover::before {
+    opacity: 1;
+    transform: rotate(25deg) translate(400%, 0);
+}
+
+.submit-btn:hover,
+.new-btn:hover,
+.disclaimer-agree-btn:hover {
+    box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4);
+}
+
+/* Form Controls Focus Glow */
+input[type="text"],
+input[type="email"],
+input[type="password"],
+input[type="number"],
+textarea,
+select {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, color 0.25s ease;
+}
+
+input[type="text"]:focus,
+input[type="email"]:focus,
+input[type="password"]:focus,
+input[type="number"]:focus,
+textarea:focus,
+select:focus {
+    border-color: var(--accent-gold);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.2), 0 4px 14px rgba(0, 0, 0, 0.3);
+    outline: none;
+}
+
+/* Sidebar Navigation Items & Section Labels */
+.sidebar-nav {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.nav-section-label {
+    font-family: 'IBM Plex Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 1.5px;
+    color: var(--text-muted);
+    font-weight: 600;
+    margin-bottom: 4px;
+}
+
+.sidebar-nav .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 14px;
+    border-radius: 8px;
+    color: var(--text-secondary);
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid transparent;
+    transition: transform 0.25s cubic-bezier(.16, .84, .44, 1), background 0.25s ease, color 0.25s ease, border-color 0.25s ease;
+}
+
+.sidebar-nav .nav-item svg {
+    color: var(--text-muted);
+    transition: color 0.2s ease;
+}
+
+.sidebar-nav .nav-item:hover {
+    background: rgba(201, 168, 76, 0.08);
+    color: var(--accent-gold-light);
+    border-color: rgba(201, 168, 76, 0.2);
+    transform: translateX(4px);
+}
+
+.sidebar-nav .nav-item:hover svg {
+    color: var(--accent-gold);
+}
+
+.sidebar-nav .nav-item.active {
+    background: rgba(201, 168, 76, 0.14);
+    color: var(--accent-gold-light);
+    border-color: rgba(201, 168, 76, 0.35);
+    font-weight: 600;
+}
+
+.sidebar-nav .nav-item.active svg {
+    color: var(--accent-gold);
+}
+
+.nav-badge-gold {
+    margin-left: auto;
+    background: rgba(201, 168, 76, 0.2);
+    border: 1px solid rgba(201, 168, 76, 0.4);
+    color: var(--accent-gold-light);
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.sidebar-footer {
+    margin-top: auto;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+}
+
+.system-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--text-secondary);
+    font-family: 'IBM Plex Mono', monospace;
+}
+
+.status-dot-green {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10B981;
+    box-shadow: 0 0 8px #10B981;
+}
+
+/* Scroll Reveal Utilities */
+.reveal {
+    opacity: 0;
+    transform: translateY(24px);
+    filter: blur(4px);
+    transition: opacity 0.65s cubic-bezier(.16, .84, .44, 1), transform 0.65s cubic-bezier(.16, .84, .44, 1), filter 0.65s cubic-bezier(.16, .84, .44, 1);
+    transition-delay: calc(var(--i, 0) * 0.05s);
+    will-change: opacity, transform, filter;
+}
+
+.reveal.visible {
+    opacity: 1;
+    transform: translateY(0);
+    filter: blur(0);
+}
+
+/* Topbar Header Scrolled State */
+.topbar.scrolled {
+    background: rgba(10, 14, 26, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    border-bottom-color: rgba(201, 168, 76, 0.25);
+}
+
+/* Prefers Reduced Motion Accessibility */
+@media (prefers-reduced-motion: reduce) {
+    #cursorGlow,
+    .cursor-glow,
+    .scroll-progress {
+        display: none !important;
+    }
+
+    *,
+    *::before,
+    *::after {
+        animation: none !important;
+        transition: none !important;
+        transform: none !important;
+    }
+}
+

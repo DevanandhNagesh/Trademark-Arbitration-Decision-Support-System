@@ -85,12 +85,12 @@ async def log_requests(request: Request, call_next):
         raise
 
 @app.get("/")
-async def serve_frontend():
-    """Serve the frontend HTML file."""
-    frontend_path = os.path.join(PROJECT_ROOT, "frontend", "index.html")
-    if not os.path.exists(frontend_path):
-        raise HTTPException(status_code=404, detail="Frontend not found")
-    return FileResponse(frontend_path, media_type="text/html")
+async def serve_landing():
+    """Serve the public landing page."""
+    landing_path = os.path.join(PROJECT_ROOT, "frontend", "landing.html")
+    if not os.path.exists(landing_path):
+        raise HTTPException(status_code=404, detail="Landing page not found")
+    return FileResponse(landing_path, media_type="text/html")
 
 
 @app.get("/auth")

@@ -7,13 +7,16 @@
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body class="auth-page">
+    <!-- Global Gold Cursor Follow Spotlight -->
+    <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
+
     <div class="auth-container">
-        <div class="auth-header">
+        <div class="auth-header reveal" style="--i: 0;">
             <h1>Trademark DSS</h1>
             <p>Arbitration Decision Support System Authentication</p>
         </div>
 
-        <div class="auth-card">
+        <div class="auth-card reveal" style="--i: 1;">
             <div class="auth-tabs" role="tablist">
                 <button type="button" class="auth-tab-btn active" id="tabLogin" role="tab" aria-selected="true">Sign In</button>
                 <button type="button" class="auth-tab-btn" id="tabSignup" role="tab" aria-selected="false">Create Account</button>
@@ -63,6 +66,7 @@
         </div>
     </div>
 
+    <script type="module" src="motion.js"></script>
     <script type="module" src="auth.js"></script>
 </body>
 </html>

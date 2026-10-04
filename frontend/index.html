@@ -3,10 +3,23 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Trademark Arbitration DSS</title>
+    <title>Trademark Arbitration DSS — Case Intake</title>
+    <!-- Authentication Guard (Protected Page) -->
+    <script type="module">
+        import { requireAuth } from "./auth-guard.js";
+        if (!requireAuth()) {
+            document.body.style.display = "none";
+        }
+    </script>
     <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+    <!-- Global Gold Cursor Follow Spotlight -->
+    <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
+
+    <!-- Scroll Progress Top Bar -->
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
     <!-- Disclaimer Modal (Gated before interaction) -->
     <div class="disclaimer-modal-overlay" id="disclaimerModalOverlay" role="dialog" aria-modal="true" aria-labelledby="disclaimerTitle" aria-describedby="disclaimerDesc">
         <div class="disclaimer-modal">
@@ -365,6 +378,7 @@
         <div>For Arbitrator Use Only - Confidential</div>
     </div>
 
+    <script type="module" src="motion.js"></script>
     <script type="module" src="app.js"></script>
 </body>
 </html>

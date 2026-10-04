@@ -1,0 +1,1537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trademark Arbitration Decision Support System — Legal Intelligence</title>
+    <link rel="stylesheet" href="styles.css" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        /* Landing Page Specific Design & Master Visual Lock */
+        :root {
+            --landing-navy: #0A0E1A;
+            --landing-card-bg: rgba(17, 24, 39, 0.75);
+            --landing-border: rgba(42, 51, 71, 0.6);
+            --landing-border-gold: rgba(201, 168, 76, 0.35);
+            --landing-glow-gold: rgba(201, 168, 76, 0.2);
+            --radius-lg: 16px;
+            --radius-md: 10px;
+        }
+
+        body.landing-body {
+            background: #070A12;
+            color: var(--text-primary);
+            font-family: 'IBM Plex Sans', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Ambient Glow Backgrounds */
+        .ambient-glow-top {
+            position: absolute;
+            top: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 1000px;
+            height: 600px;
+            background: radial-gradient(circle, rgba(27, 58, 107, 0.35) 0%, rgba(201, 168, 76, 0.08) 45%, transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* Glass Header / Navigation */
+        .landing-header {
+            position: sticky;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 1000;
+            background: rgba(7, 10, 18, 0.82);
+            backdrop-filter: blur(14px);
+            -webkit-backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(42, 51, 71, 0.4);
+            transition: background 0.3s ease, padding 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
+        }
+
+        .landing-header.scrolled {
+            background: rgba(7, 10, 18, 0.96);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            border-bottom-color: rgba(201, 168, 76, 0.25);
+        }
+
+        .landing-header.scrolled .landing-nav-container {
+            padding-top: 10px;
+            padding-bottom: 10px;
+        }
+
+        .landing-nav-container {
+            max-width: 1280px;
+            margin: 0 auto;
+            padding: 16px 32px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: padding 0.3s ease;
+        }
+
+        .landing-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+        }
+
+        .landing-brand-icon {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #E8C96A;
+        }
+
+        .landing-brand-title {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 22px;
+            color: #E8C96A;
+            letter-spacing: 0.2px;
+            font-weight: 400;
+        }
+
+        .landing-nav-links {
+            display: flex;
+            align-items: center;
+            gap: 32px;
+            list-style: none;
+            margin: 0;
+            padding: 0;
+        }
+
+        .landing-nav-links a {
+            color: #94A3B8;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: color 0.2s ease;
+            position: relative;
+            padding: 4px 0;
+        }
+
+        .landing-nav-links a:hover {
+            color: #FFFFFF;
+        }
+
+        .landing-nav-links a.active {
+            color: var(--accent-gold-light);
+        }
+
+        .landing-nav-links a.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--accent-gold);
+            border-radius: 2px;
+            box-shadow: 0 0 8px var(--accent-gold);
+        }
+
+        /* Top-Right Nav Auth Buttons */
+        .landing-nav-auth {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .nav-btn-signin {
+            background: rgba(26, 32, 44, 0.6);
+            color: #F1F5F9;
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            padding: 9px 20px;
+            border-radius: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn-signin:hover {
+            border-color: rgba(255, 255, 255, 0.35);
+            background: rgba(30, 41, 59, 0.8);
+            color: #FFFFFF;
+        }
+
+        .nav-btn-create {
+            background: #E8C96A;
+            color: #0A0E1A;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 9px 20px;
+            border-radius: 8px;
+            text-decoration: none;
+            border: 1px solid rgba(232, 201, 106, 0.5);
+            box-shadow: 0 2px 10px rgba(232, 201, 106, 0.25);
+            transition: all 0.2s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .nav-btn-create:hover {
+            background: #F3D784;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(232, 201, 106, 0.4);
+        }
+
+        /* Scroll Progress Bar */
+        .scroll-progress {
+            position: fixed;
+            top: 0;
+            left: 0;
+            height: 3px;
+            width: 0%;
+            background: linear-gradient(90deg, #C9A84C, #E8C96A);
+            z-index: 10001;
+            transition: width 0.08s linear;
+            pointer-events: none;
+        }
+
+        /* Hero Section - Full Viewport Immersive Courthouse Architecture */
+        .landing-hero {
+            position: relative;
+            width: 100%;
+            min-height: 84vh;
+            display: flex;
+            align-items: center;
+            background-color: #070A12;
+            background-image: url('assets/hero-courthouse.png');
+            background-position: right center;
+            background-size: cover;
+            background-repeat: no-repeat;
+            overflow: hidden;
+            border-bottom: 1px solid rgba(42, 51, 71, 0.5);
+        }
+
+        /* Hero Ambient Blobs */
+        .hero-blobs-layer {
+            position: absolute;
+            inset: 0;
+            overflow: hidden;
+            pointer-events: none;
+            z-index: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .hero-blob {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(70px);
+            pointer-events: none;
+            will-change: transform, opacity;
+        }
+
+        .hero-blob-1 {
+            top: 15%;
+            left: 8%;
+            width: 400px;
+            height: 400px;
+            background: radial-gradient(circle, rgba(201, 168, 76, 0.14) 0%, rgba(27, 58, 107, 0.15) 50%, transparent 75%);
+            animation: blobFloat1 14s ease-in-out infinite;
+        }
+
+        .hero-blob-2 {
+            bottom: 15%;
+            left: 32%;
+            width: 460px;
+            height: 460px;
+            background: radial-gradient(circle, rgba(27, 58, 107, 0.28) 0%, rgba(201, 168, 76, 0.08) 50%, transparent 75%);
+            animation: blobFloat2 18s ease-in-out infinite;
+        }
+
+        .hero-blob-3 {
+            top: 35%;
+            right: 18%;
+            width: 340px;
+            height: 340px;
+            background: radial-gradient(circle, rgba(201, 168, 76, 0.12) 0%, transparent 70%);
+            animation: blobFloat3 12s ease-in-out infinite;
+        }
+
+        @keyframes blobFloat1 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(30px, -20px) scale(1.08); }
+        }
+
+        @keyframes blobFloat2 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(-25px, 25px) scale(0.95); }
+        }
+
+        @keyframes blobFloat3 {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            50% { transform: translate(20px, 15px) scale(1.05); }
+        }
+
+        .hero-backdrop-gradient {
+            position: absolute;
+            inset: 0;
+            background: 
+                linear-gradient(to right, #070A12 0%, rgba(7, 10, 18, 0.94) 28%, rgba(7, 10, 18, 0.65) 52%, rgba(7, 10, 18, 0.15) 75%, transparent 100%),
+                linear-gradient(to top, #070A12 0%, rgba(7, 10, 18, 0.4) 12%, transparent 30%);
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .hero-container {
+            position: relative;
+            max-width: 1280px;
+            width: 100%;
+            margin: 0 auto;
+            padding: 90px 32px 100px;
+            z-index: 2;
+            display: flex;
+            align-items: center;
+        }
+
+        .hero-text-content {
+            max-width: 720px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .hero-eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 2.2px;
+            text-transform: uppercase;
+            color: #E8C96A;
+            margin-bottom: 22px;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hero-headline {
+            font-family: 'DM Serif Display', Georgia, serif;
+            font-size: 52px;
+            line-height: 1.12;
+            color: #F8FAFC;
+            letter-spacing: -0.5px;
+            margin-bottom: 22px;
+            font-weight: 400;
+            text-shadow: 0 4px 24px rgba(0, 0, 0, 0.7);
+        }
+
+        .hero-subhead {
+            font-size: 19px;
+            font-weight: 500;
+            color: #E2E8F0;
+            line-height: 1.45;
+            margin-bottom: 14px;
+        }
+
+        .hero-description {
+            font-size: 14px;
+            color: #94A3B8;
+            line-height: 1.65;
+            max-width: 520px;
+            margin-bottom: 34px;
+        }
+
+        .hero-cta-row {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .btn-hero-primary {
+            background: #E8C96A;
+            color: #0A0E1A;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 13px 26px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 16px rgba(232, 201, 106, 0.35);
+            border: 1px solid rgba(232, 201, 106, 0.6);
+            transition: all 0.25s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-hero-primary:hover {
+            background: #F3D784;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 22px rgba(232, 201, 106, 0.5);
+        }
+
+        .btn-hero-secondary {
+            background: rgba(17, 24, 39, 0.65);
+            color: #F1F5F9;
+            font-weight: 500;
+            font-size: 14px;
+            padding: 13px 26px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-hero-secondary:hover {
+            border-color: rgba(255, 255, 255, 0.4);
+            background: rgba(26, 35, 54, 0.85);
+            color: #FFFFFF;
+            transform: translateY(-2px);
+        }
+
+        /* Button Shimmer Sweep Effect */
+        .btn-hero-primary::before,
+        .btn-hero-secondary::before,
+        .btn-gradient::before,
+        .btn-outline::before,
+        .nav-btn-create::before,
+        .nav-btn-signin::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -60%;
+            width: 40%;
+            height: 200%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.35), rgba(232, 201, 106, 0.3), transparent);
+            transform: rotate(25deg);
+            transition: transform 0.65s cubic-bezier(.16, .84, .44, 1);
+            pointer-events: none;
+            opacity: 0;
+        }
+
+        .btn-hero-primary:hover::before,
+        .btn-hero-secondary:hover::before,
+        .btn-gradient:hover::before,
+        .btn-outline:hover::before,
+        .nav-btn-create:hover::before,
+        .nav-btn-signin:hover::before {
+            opacity: 1;
+            transform: rotate(25deg) translate(400%, 0);
+        }
+
+        /* General Master Button Styles for remaining sections */
+        .btn-gradient {
+            background: linear-gradient(135deg, #C9A84C 0%, #B28E34 100%);
+            color: #0A0E1A;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 10px 22px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 4px 14px rgba(201, 168, 76, 0.3);
+            transition: all 0.25s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-gradient:hover {
+            background: linear-gradient(135deg, #E8C96A 0%, #C9A84C 100%);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(201, 168, 76, 0.45);
+        }
+
+        .btn-outline {
+            background: rgba(17, 24, 39, 0.6);
+            color: var(--text-primary);
+            font-weight: 500;
+            font-size: 14px;
+            padding: 10px 22px;
+            border-radius: 8px;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            border: 1px solid var(--border);
+            backdrop-filter: blur(8px);
+            transition: all 0.25s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-outline:hover {
+            border-color: var(--accent-gold);
+            color: var(--accent-gold);
+            background: rgba(201, 168, 76, 0.08);
+            transform: translateY(-2px);
+        }
+
+        /* Scroll Reveal Utility */
+        .reveal {
+            opacity: 0;
+            transform: translateY(28px);
+            filter: blur(4px);
+            transition: opacity 0.7s cubic-bezier(.16, .84, .44, 1), transform 0.7s cubic-bezier(.16, .84, .44, 1), filter 0.7s cubic-bezier(.16, .84, .44, 1);
+            transition-delay: calc(var(--i, 0) * 0.06s);
+            will-change: opacity, transform, filter;
+        }
+
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+            filter: blur(0);
+        }
+
+        /* Section Containers */
+        .landing-section {
+            max-width: 1240px;
+            margin: 0 auto;
+            padding: 90px 24px;
+            position: relative;
+        }
+
+        .section-header {
+            text-align: center;
+            max-width: 720px;
+            margin: 0 auto 56px;
+        }
+
+        .section-eyebrow {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            letter-spacing: 2px;
+            text-transform: uppercase;
+            color: var(--accent-gold);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .section-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 36px;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+            line-height: 1.2;
+        }
+
+        .section-subtitle {
+            font-size: 15px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* Capability Showcase Bento Grid */
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .bento-card {
+            background: var(--landing-card-bg);
+            border: 1px solid var(--landing-border);
+            border-radius: var(--radius-lg);
+            padding: 28px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: transform 0.4s cubic-bezier(.16, .84, .44, 1), border-color 0.3s ease, box-shadow 0.4s cubic-bezier(.16, .84, .44, 1), background 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .bento-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.4), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .bento-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(201, 168, 76, 0.45);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(201, 168, 76, 0.12);
+        }
+
+        .bento-card:hover::before {
+            opacity: 1;
+        }
+
+        /* Interactive Spotlight Pseudo-element on Cards */
+        .bento-card::after,
+        .use-case-card::after,
+        .pipeline-step-card::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            border-radius: inherit;
+            background: radial-gradient(circle 240px at var(--mx, -200px) var(--my, -200px), rgba(201, 168, 76, 0.10) 0%, transparent 80%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .bento-card:hover::after,
+        .use-case-card:hover::after,
+        .pipeline-step-card:hover::after {
+            opacity: 1;
+        }
+
+        .bento-icon {
+            width: 44px;
+            height: 44px;
+            border-radius: 10px;
+            background: rgba(201, 168, 76, 0.12);
+            border: 1px solid var(--landing-border-gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--accent-gold);
+            margin-bottom: 20px;
+        }
+
+        .bento-card h3 {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 10px;
+        }
+
+        .bento-card p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .bento-tag {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--accent-gold);
+            margin-top: 18px;
+            display: inline-block;
+        }
+
+        /* Use Cases Section Styling */
+        .use-cases-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+        }
+
+        .use-case-card {
+            background: var(--landing-card-bg);
+            border: 1px solid var(--landing-border);
+            border-radius: var(--radius-lg);
+            padding: 30px 28px;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            position: relative;
+            overflow: hidden;
+            transition: transform 0.4s cubic-bezier(.16, .84, .44, 1), border-color 0.3s ease, box-shadow 0.4s cubic-bezier(.16, .84, .44, 1), background 0.3s ease;
+        }
+
+        .use-case-card:hover {
+            transform: translateY(-8px);
+            border-color: rgba(201, 168, 76, 0.45);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(201, 168, 76, 0.12);
+        }
+
+        .use-case-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(90deg, transparent, rgba(201, 168, 76, 0.5), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .use-case-card:hover::before {
+            opacity: 1;
+        }
+
+        .use-case-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 18px;
+        }
+
+        .use-case-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--text-primary);
+            font-family: 'DM Serif Display', Georgia, serif;
+        }
+
+        .outcome-pill {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            letter-spacing: 0.8px;
+            text-transform: uppercase;
+            padding: 5px 12px;
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .outcome-pill.arbitrable {
+            background: rgba(16, 185, 129, 0.15);
+            border: 1px solid rgba(16, 185, 129, 0.4);
+            color: #34D399;
+        }
+
+        .outcome-pill.not-arbitrable {
+            background: rgba(239, 68, 68, 0.15);
+            border: 1px solid rgba(239, 68, 68, 0.4);
+            color: #F87171;
+        }
+
+        .outcome-pill .status-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .outcome-pill.arbitrable .status-dot {
+            background: #34D399;
+            box-shadow: 0 0 6px #34D399;
+        }
+
+        .outcome-pill.not-arbitrable .status-dot {
+            background: #F87171;
+            box-shadow: 0 0 6px #F87171;
+        }
+
+        .use-case-desc {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.65;
+            margin-bottom: 22px;
+        }
+
+        .use-case-ref {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 11px;
+            color: var(--accent-gold);
+            padding-top: 14px;
+            border-top: 1px solid rgba(42, 51, 71, 0.5);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        /* How It Works Pipeline */
+        .pipeline-container {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 20px;
+            position: relative;
+        }
+
+        .pipeline-step-card {
+            background: var(--landing-card-bg);
+            border: 1px solid var(--landing-border);
+            border-radius: var(--radius-md);
+            padding: 22px 20px;
+            position: relative;
+            backdrop-filter: blur(8px);
+            transition: transform 0.4s cubic-bezier(.16, .84, .44, 1), border-color 0.3s ease, box-shadow 0.4s cubic-bezier(.16, .84, .44, 1), background 0.3s ease;
+            overflow: hidden;
+        }
+
+        .pipeline-step-card:hover {
+            border-color: rgba(201, 168, 76, 0.45);
+            background: rgba(28, 35, 51, 0.85);
+            transform: translateY(-8px);
+            box-shadow: 0 16px 36px rgba(0, 0, 0, 0.5), 0 0 24px rgba(201, 168, 76, 0.12);
+        }
+
+        .pipeline-step-num {
+            font-family: 'IBM Plex Mono', monospace;
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--accent-gold);
+            background: rgba(201, 168, 76, 0.15);
+            width: 26px;
+            height: 26px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 14px;
+        }
+
+        .pipeline-step-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 6px;
+        }
+
+        .pipeline-step-desc {
+            font-size: 12px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* Safety Section */
+        .safety-panel {
+            background: linear-gradient(135deg, rgba(17, 24, 39, 0.9) 0%, rgba(10, 14, 26, 0.95) 100%);
+            border: 1px solid var(--landing-border-gold);
+            border-radius: var(--radius-lg);
+            padding: 44px;
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 40px;
+            align-items: center;
+        }
+
+        .safety-header h3 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 28px;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .safety-list {
+            list-style: none;
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .safety-list li {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        .safety-list li strong {
+            color: var(--text-primary);
+        }
+
+        .safety-list svg {
+            color: var(--accent-gold);
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        /* Final CTA Section */
+        .final-cta-section {
+            background: radial-gradient(circle at center, rgba(27, 58, 107, 0.4) 0%, rgba(10, 14, 26, 0.9) 70%);
+            border: 1px solid var(--landing-border-gold);
+            border-radius: var(--radius-lg);
+            padding: 64px 32px;
+            text-align: center;
+            max-width: 1000px;
+            margin: 40px auto 80px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+        }
+
+        .final-cta-section h2 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 38px;
+            color: var(--text-primary);
+            margin-bottom: 14px;
+        }
+
+        .final-cta-section p {
+            color: var(--text-secondary);
+            font-size: 15px;
+            max-width: 600px;
+            margin: 0 auto 30px;
+        }
+
+        .final-cta-buttons {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 18px;
+        }
+
+        /* Footer */
+        .landing-footer {
+            border-top: 1px solid rgba(42, 51, 71, 0.6);
+            padding: 40px 24px;
+            background: #060911;
+            text-align: center;
+            font-size: 12px;
+            color: var(--text-muted);
+        }
+
+        .landing-footer a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            margin: 0 10px;
+        }
+
+        .landing-footer a:hover {
+            color: var(--accent-gold);
+        }
+
+        /* Responsive Layouts */
+        @media (max-width: 1024px) {
+            .landing-hero {
+                min-height: 75vh;
+                background-position: 80% center;
+            }
+            .hero-container {
+                padding: 70px 24px 80px;
+            }
+            .hero-headline {
+                font-size: 46px;
+            }
+            .bento-grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .pipeline-container {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            .safety-panel {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .landing-nav-links {
+                display: none;
+            }
+            .landing-hero {
+                min-height: auto;
+                background-position: 70% top;
+            }
+            .hero-container {
+                padding: 50px 20px 60px;
+            }
+            .hero-headline {
+                font-size: 36px;
+            }
+            .hero-subhead {
+                font-size: 16px;
+            }
+            .bento-grid {
+                grid-template-columns: 1fr;
+            }
+            .pipeline-container {
+                grid-template-columns: 1fr;
+            }
+            .hero-cta-row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .final-cta-buttons {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+
+        @media (prefers-reduced-motion: reduce) {
+            * {
+                animation: none !important;
+                transition: none !important;
+            }
+            .hero-image-panel {
+                transform: none !important;
+            }
+        }
+    </style>
+</head>
+<body class="landing-body">
+    <!-- Global Gold Cursor Follow Spotlight -->
+    <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
+
+    <!-- Scroll Progress Top Bar -->
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+    <div class="ambient-glow-top"></div>
+
+    <!-- Navigation Bar -->
+    <header class="landing-header" id="landingHeader">
+        <div class="landing-nav-container">
+            <a href="/" class="landing-brand">
+                <div class="landing-brand-icon">
+                    <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="#E8C96A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 3v17"></path>
+                        <path d="M5 21h14"></path>
+                        <path d="M5 7l7-4 7 4"></path>
+                        <path d="M3 13l2-6 2 6a2 2 0 0 1-4 0z"></path>
+                        <path d="M17 13l2-6 2 6a2 2 0 0 1-4 0z"></path>
+                    </svg>
+                </div>
+                <span class="landing-brand-title">Trademark DSS</span>
+            </a>
+
+            <ul class="landing-nav-links">
+                <li><a href="#capabilities">Features</a></li>
+                <li><a href="#use-cases">Use Cases</a></li>
+                <li><a href="#how-it-works">How It Works</a></li>
+                <li><a href="#safety">Safety</a></li>
+                <li><a href="#about">About</a></li>
+            </ul>
+
+            <div class="landing-nav-auth">
+                <a href="auth.html" class="nav-btn-signin">Sign In</a>
+                <a href="auth.html?mode=signup" class="nav-btn-create">Create Account</a>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <!-- Hero Section - Full Viewport Immersive Hero -->
+        <section class="landing-hero" id="heroSection">
+            <!-- Hero Ambient Floating Blobs -->
+            <div class="hero-blobs-layer" id="heroBlobsLayer" aria-hidden="true">
+                <div class="hero-blob hero-blob-1"></div>
+                <div class="hero-blob hero-blob-2"></div>
+                <div class="hero-blob hero-blob-3"></div>
+            </div>
+
+            <div class="hero-backdrop-gradient"></div>
+            <div class="hero-container">
+                <div class="hero-text-content">
+                    <div class="hero-eyebrow">
+                        EVIDENCE-GROUNDED • LAW-FIRST • HUMAN-IN-THE-LOOP
+                    </div>
+                    <h1 class="hero-headline">
+                        Trademark<br>
+                        Arbitration<br>
+                        Decision Support System
+                    </h1>
+                    <div class="hero-subhead">
+                        Transform dispute facts into structured, reliable legal analysis.
+                    </div>
+                    <p class="hero-description">
+                        An AI-assisted platform for legal professionals, designed to support trademark arbitration with authoritative research, structured reasoning and transparent citations.
+                    </p>
+                    <div class="hero-cta-row">
+                        <a href="#capabilities" class="btn-hero-primary" id="heroExploreBtn">
+                            Explore the System →
+                        </a>
+                        <a href="auth.html?mode=signup" class="btn-hero-secondary">
+                            Create Account
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Capabilities Showcase Section (Bento Grid) -->
+        <section class="landing-section" id="capabilities">
+            <div class="section-header">
+                <span class="section-eyebrow">INTELLIGENCE PLATFORM</span>
+                <h2 class="section-title">Comprehensive Legal Capabilities</h2>
+                <p class="section-subtitle">
+                    Designed for rigorous statutory adherence, every recommendation is anchored in statute first, authoritative precedent second, and factual application third.
+                </p>
+            </div>
+
+            <div class="bento-grid">
+                <!-- Card 1: Arbitrability -->
+                <div class="bento-card reveal" style="--i: 0;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v18"></path><path d="M6 8l6-5 6 5"></path><path d="M3 13l3-5 3 5a3 3 0 0 1-6 0z"></path><path d="M15 13l3-5 3 5a3 3 0 0 1-6 0z"></path></svg>
+                    </div>
+                    <div>
+                        <h3>Deterministic Arbitrability</h3>
+                        <p>Zero-LLM deterministic classification applying the Booz Allen <em>right in rem</em> vs <em>in personam</em> test and the Vidya Drolia fourfold test to establish tribunal jurisdiction without hallucinations.</p>
+                    </div>
+                    <span class="bento-tag">DETERMINISTIC RULES</span>
+                </div>
+
+                <!-- Card 2: Landmark Cases -->
+                <div class="bento-card reveal" style="--i: 1;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                    </div>
+                    <div>
+                        <h3>Landmark Precedent Retrieval</h3>
+                        <p>ChromaDB vector search coupled with a pre-trained SVM classifier retrieves relevant Supreme Court and Delhi High Court authorities with hard category pre-filtering.</p>
+                    </div>
+                    <span class="bento-tag">LOCAL CHROMADB RAG</span>
+                </div>
+
+                <!-- Card 3: Statutory Provisions -->
+                <div class="bento-card reveal" style="--i: 2;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    </div>
+                    <div>
+                        <h3>Statute-First Principles</h3>
+                        <p>Extracts and structures relevant sections of the Trade Marks Act 1999, Arbitration Act 1996, and Indian Contract Act 1872 to govern the dispute.</p>
+                    </div>
+                    <span class="bento-tag">INDIAN JURISDICTION</span>
+                </div>
+
+                <!-- Card 4: Issues for Determination -->
+                <div class="bento-card reveal" style="--i: 3;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                    </div>
+                    <div>
+                        <h3>Issues for Determination</h3>
+                        <p>Automatically formulates 4 core legal issues for the tribunal or civil court, complete with statutory section mappings and declarative finding options.</p>
+                    </div>
+                    <span class="bento-tag">LEGAL ISSUE FRAMING</span>
+                </div>
+
+                <!-- Card 5: Award Framework -->
+                <div class="bento-card reveal" style="--i: 4;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>
+                    </div>
+                    <div>
+                        <h3>Award Framework</h3>
+                        <p>Generates structured operative templates and guidance on permanent injunctions, damages assessments, and cost allocations strictly in non-authoritative system voice.</p>
+                    </div>
+                    <span class="bento-tag">SYSTEM-VOICE FRAMING</span>
+                </div>
+
+                <!-- Card 6: Adversarial Analysis -->
+                <div class="bento-card reveal" style="--i: 5;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 16v1a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h11a2 2 0 0 1 2 2v1"></path><path d="M18 8h4a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2h-4"></path><circle cx="8" cy="12" r="2"></circle></svg>
+                    </div>
+                    <div>
+                        <h3>Adversarial Review</h3>
+                        <p>Balanced dual-counsel perspective analyzing arguments for the claimant, defenses for the respondent, and alternative legal strategies with strength ratings.</p>
+                    </div>
+                    <span class="bento-tag">DUAL-COUNSEL AUDIT</span>
+                </div>
+
+                <!-- Card 7: Citation Verification -->
+                <div class="bento-card reveal" style="--i: 6;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                    </div>
+                    <div>
+                        <h3>Citation Verification</h3>
+                        <p>Automated regex verification checks every cited judgment against retrieved authorities and official law reports, flagging unverified citations in orange text.</p>
+                    </div>
+                    <span class="bento-tag">HALLUCINATION GUARD</span>
+                </div>
+
+                <!-- Card 8: Structured DOCX Report -->
+                <div class="bento-card reveal" style="--i: 7;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </div>
+                    <div>
+                        <h3>Structured DOCX Reports</h3>
+                        <p>Exports complete, boardroom-ready Word reports formatted with executive tables, statutory analyses, adversarial breakdowns, and signature blocks.</p>
+                    </div>
+                    <span class="bento-tag">DOWNLOADABLE ARTIFACT</span>
+                </div>
+
+                <!-- Card 9: Uncertainty System -->
+                <div class="bento-card reveal" style="--i: 8;">
+                    <div class="bento-icon">
+                        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </div>
+                    <div>
+                        <h3>Uncertainty & Contradictions</h3>
+                        <p>Scans narrative facts for conflicting in-rem keywords and flags severe statutory terms (e.g. cancellation) with mandatory manual review warnings.</p>
+                    </div>
+                    <span class="bento-tag">SAFETY GOVERNANCE</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Use Cases Showcase Section (Distinct Target for Use Cases Nav) -->
+        <section class="landing-section" id="use-cases" style="background: rgba(11, 18, 34, 0.25); border-top: 1px solid rgba(42, 51, 71, 0.4); border-bottom: 1px solid rgba(42, 51, 71, 0.4);">
+            <div class="section-header">
+                <span class="section-eyebrow">PRACTICAL APPLICATIONS</span>
+                <h2 class="section-title">Common Arbitration Scenarios</h2>
+                <p class="section-subtitle">
+                    Evaluating jurisdictional arbitrability thresholds across real-world commercial trademark disputes under Indian law.
+                </p>
+            </div>
+
+            <div class="use-cases-grid">
+                <!-- Use Case 1: License Dispute -->
+                <div class="use-case-card reveal" style="--i: 0;">
+                    <div>
+                        <div class="use-case-header">
+                            <h3 class="use-case-title">License Dispute</h3>
+                            <span class="outcome-pill arbitrable">
+                                <span class="status-dot"></span>
+                                Arbitrable
+                            </span>
+                        </div>
+                        <p class="use-case-desc">
+                            Contractual dispute arising from trademark license terms, breach of royalty covenants, or territory restrictions between contracting commercial parties.
+                        </p>
+                    </div>
+                    <div class="use-case-ref">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"></path><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"></path></svg>
+                        <span>Hero Electric Precedent Pattern (2021)</span>
+                    </div>
+                </div>
+
+                <!-- Use Case 2: Trademark Infringement -->
+                <div class="use-case-card reveal" style="--i: 1;">
+                    <div>
+                        <div class="use-case-header">
+                            <h3 class="use-case-title">Trademark Infringement</h3>
+                            <span class="outcome-pill not-arbitrable">
+                                <span class="status-dot"></span>
+                                Not Arbitrable
+                            </span>
+                        </div>
+                        <p class="use-case-desc">
+                            Pure statutory tort claim alleging deceptive similarity and passing off without a pre-existing contractual arbitration agreement between the parties.
+                        </p>
+                    </div>
+                    <div class="use-case-ref">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="8" x2="12" y2="12"></line><line x1="12" y1="16" x2="12.01" y2="16"></line></svg>
+                        <span>Parle Products Statutory Precedent (1972)</span>
+                    </div>
+                </div>
+
+                <!-- Use Case 3: Assignment Dispute -->
+                <div class="use-case-card reveal" style="--i: 2;">
+                    <div>
+                        <div class="use-case-header">
+                            <h3 class="use-case-title">Assignment Dispute</h3>
+                            <span class="outcome-pill arbitrable">
+                                <span class="status-dot"></span>
+                                Arbitrable
+                            </span>
+                        </div>
+                        <p class="use-case-desc">
+                            Commercial dispute regarding ownership rights, assignment deed covenants, or contractual consideration under a valid inter-partes trademark agreement.
+                        </p>
+                    </div>
+                    <div class="use-case-ref">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline></svg>
+                        <span>Coca-Cola / Bisleri Deed Pattern (2009)</span>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- How It Works Pipeline Section -->
+        <section class="landing-section" id="how-it-works">
+            <div class="section-header">
+                <span class="section-eyebrow">REASONING PIPELINE</span>
+                <h2 class="section-title">The Decision Support Workflow</h2>
+                <p class="section-subtitle">
+                    How Trademark DSS structures raw dispute facts into actionable, law-grounded decision frameworks.
+                </p>
+            </div>
+
+            <div class="pipeline-container">
+                <div class="pipeline-step-card reveal" style="--i: 0;">
+                    <div class="pipeline-step-num">1</div>
+                    <div class="pipeline-step-title">Dispute Intake</div>
+                    <div class="pipeline-step-desc">Parties, trademark, contractual context, and narrative facts are captured and validated.</div>
+                </div>
+
+                <div class="pipeline-step-card reveal" style="--i: 1;">
+                    <div class="pipeline-step-num">2</div>
+                    <div class="pipeline-step-title">Arbitrability Check</div>
+                    <div class="pipeline-step-desc">Deterministic Booz Allen and Vidya Drolia tests evaluate statutory jurisdiction.</div>
+                </div>
+
+                <div class="pipeline-step-card reveal" style="--i: 2;">
+                    <div class="pipeline-step-num">3</div>
+                    <div class="pipeline-step-title">Precedent Retrieval</div>
+                    <div class="pipeline-step-desc">SVM classifier and ChromaDB retrieve binding and persuasive Indian case law.</div>
+                </div>
+
+                <div class="pipeline-step-card reveal" style="--i: 3;">
+                    <div class="pipeline-step-num">4</div>
+                    <div class="pipeline-step-title">Legal Provisions</div>
+                    <div class="pipeline-step-desc">Trade Marks Act and Arbitration Act sections are identified and mapped to facts.</div>
+                </div>
+
+                <div class="pipeline-step-card reveal" style="--i: 4;">
+                    <div class="pipeline-step-num">5</div>
+                    <div class="pipeline-step-title">Issue Formulation</div>
+                    <div class="pipeline-step-desc">Four distinct legal issues with statutory options are framed for determination.</div>
+                </div>
+
+                <div class="pipeline-step-card reveal" style="--i: 5;">
+                    <div class="pipeline-step-num">6</div>
+                    <div class="pipeline-step-title">Adversarial Analysis</div>
+                    <div class="pipeline-step-desc">Balanced claimant arguments, respondent defenses, and alternative options are computed.</div>
+                </div>
+
+                <div class="pipeline-step-card reveal" style="--i: 6;">
+                    <div class="pipeline-step-num">7</div>
+                    <div class="pipeline-step-title">Citation Verification</div>
+                    <div class="pipeline-step-desc">Every judicial citation is validated against authoritative precedent registries.</div>
+                </div>
+
+                <div class="pipeline-step-card reveal" style="--i: 7;">
+                    <div class="pipeline-step-num">8</div>
+                    <div class="pipeline-step-title">Structured DOCX</div>
+                    <div class="pipeline-step-desc">A complete 7-section Word report is compiled and delivered for arbitrator review.</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Safety & Disclaimers / About Section (Reused as About Target) -->
+        <section class="landing-section" id="about">
+            <div id="safety" style="position: absolute; top: -80px;"></div>
+            <div class="safety-panel reveal" style="--i: 0;">
+                <div class="safety-header">
+                    <span class="section-eyebrow">ETHICAL & REGULATORY GUARDRAILS</span>
+                    <h3>Human-in-the-Loop Decision Support</h3>
+                    <p style="color: var(--text-secondary); font-size: 14px; margin-top: 10px;">
+                        Trademark DSS is an assistive analytical instrument. It is designed to empower human legal judgment, not replace it.
+                    </p>
+                </div>
+
+                <ul class="safety-list">
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <div>
+                            <strong>Decision Support Only:</strong> This system assists the arbitrator or legal counsel. It does not issue binding awards or legal advice.
+                        </div>
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <div>
+                            <strong>Curated Indian Law Precedents:</strong> Analysis is grounded in Indian statutes and landmark judgments from the Supreme Court and High Courts.
+                        </div>
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <div>
+                            <strong>Citation Verification & Unverified Markers:</strong> Any citation not present in our indexed registry is visibly marked with <span style="color: var(--accent-gold); font-weight: 600;">[UNVERIFIED]</span>.
+                        </div>
+                    </li>
+                    <li>
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                        <div>
+                            <strong>Fallback Generation Transparency:</strong> If cloud LLM services are unavailable, deterministic fallbacks trigger and are clearly labeled on the interface and generated documents.
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <!-- Final CTA Section -->
+        <section class="landing-section" style="padding-top: 0;">
+            <div class="final-cta-section reveal" id="final-cta" style="--i: 0;">
+                <h2>Ready to use Trademark DSS?</h2>
+                <p>
+                    Sign in with your legal counsel credentials or create a brand owner account to begin dispute evaluation and generate structured arbitration reports.
+                </p>
+                <div class="final-cta-buttons">
+                    <a href="auth.html" class="btn-outline">
+                        Sign In
+                    </a>
+                    <a href="auth.html?mode=signup" class="btn-gradient">
+                        Create Account
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="landing-footer">
+        <div style="max-width: 1240px; margin: 0 auto; display: flex; flex-direction: column; gap: 14px; align-items: center;">
+            <div style="color: var(--accent-gold); font-weight: 600; font-size: 14px;">Trademark Arbitration Decision Support System</div>
+            <div>
+                <a href="#capabilities">Features</a> • 
+                <a href="#use-cases">Use Cases</a> • 
+                <a href="#how-it-works">How It Works</a> • 
+                <a href="#safety">Safety</a> • 
+                <a href="#about">About</a> • 
+                <a href="auth.html">Sign In</a> • 
+                <a href="auth.html?mode=signup">Create Account</a>
+            </div>
+            <div style="color: var(--text-muted); font-size: 11px; max-width: 700px;">
+                © 2026 Trademark DSS. Powered by Gemini 2.5 Flash, ChromaDB, and Indian Kanoon. For Arbitrator and Legal Practitioner Use Only. Not a substitute for independent judicial adjudication.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Interactive Animation & Effects Script -->
+    <script>
+        document.addEventListener("DOMContentLoaded", () => {
+            const cursorGlow = document.getElementById("cursorGlow");
+            const scrollProgress = document.getElementById("scrollProgress");
+            const header = document.getElementById("landingHeader") || document.querySelector(".landing-header");
+            const heroBlobs = document.getElementById("heroBlobsLayer");
+            const exploreBtn = document.getElementById("heroExploreBtn");
+            const isReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            // 1. Cursor Follow Spotlight
+            if (cursorGlow && !isReducedMotion && window.matchMedia("(pointer: fine)").matches) {
+                let targetX = -500, targetY = -500;
+                let currX = -500, currY = -500;
+                let isMoving = false;
+
+                window.addEventListener("pointermove", (e) => {
+                    targetX = e.clientX;
+                    targetY = e.clientY;
+                    if (!isMoving) {
+                        cursorGlow.style.opacity = "1";
+                        isMoving = true;
+                    }
+                }, { passive: true });
+
+                window.addEventListener("pointerleave", () => {
+                    cursorGlow.style.opacity = "0";
+                    isMoving = false;
+                });
+
+                function animateCursor() {
+                    currX += (targetX - currX) * 0.12;
+                    currY += (targetY - currY) * 0.12;
+                    cursorGlow.style.transform = `translate3d(${currX}px, ${currY}px, 0) translate(-50%, -50%)`;
+                    requestAnimationFrame(animateCursor);
+                }
+                requestAnimationFrame(animateCursor);
+            }
+
+            // 2. Scroll Progress Bar, Header Scrolled State & Hero Blobs Fade
+            function onScroll() {
+                const scrollY = window.scrollY;
+                const docHeight = document.documentElement.scrollHeight - window.innerHeight;
+                const progress = docHeight > 0 ? (scrollY / docHeight) * 100 : 0;
+
+                if (scrollProgress) {
+                    scrollProgress.style.width = `${progress}%`;
+                }
+
+                if (header) {
+                    if (scrollY > 50) {
+                        header.classList.add("scrolled");
+                    } else {
+                        header.classList.remove("scrolled");
+                    }
+                }
+
+                if (heroBlobs) {
+                    const opacity = Math.max(0, 1 - scrollY / 650);
+                    heroBlobs.style.opacity = opacity.toString();
+                }
+            }
+            window.addEventListener("scroll", onScroll, { passive: true });
+            onScroll();
+
+            // 3. Scroll Reveal via IntersectionObserver
+            if (!isReducedMotion && "IntersectionObserver" in window) {
+                const revealObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            entry.target.classList.add("visible");
+                            revealObserver.unobserve(entry.target);
+                        }
+                    });
+                }, { threshold: 0.05, rootMargin: "60px 0px -20px 0px" });
+
+                document.querySelectorAll(".reveal").forEach(el => revealObserver.observe(el));
+            } else {
+                document.querySelectorAll(".reveal").forEach(el => el.classList.add("visible"));
+            }
+
+            // 4. Active Nav Link Highlight on Scroll
+            if ("IntersectionObserver" in window) {
+                const trackedSections = document.querySelectorAll("section[id]");
+                const navLinks = document.querySelectorAll(".landing-nav-links a");
+
+                const navObserver = new IntersectionObserver((entries) => {
+                    entries.forEach(entry => {
+                        if (entry.isIntersecting) {
+                            const id = entry.target.getAttribute("id");
+                            navLinks.forEach(link => {
+                                const href = link.getAttribute("href");
+                                if (href === `#${id}` || (id === "about" && href === "#safety") || (id === "about" && href === "#about")) {
+                                    link.classList.add("active");
+                                } else if (href && href.startsWith("#")) {
+                                    const targetId = href.substring(1);
+                                    if (targetId !== id && !(id === "about" && targetId === "safety")) {
+                                        link.classList.remove("active");
+                                    }
+                                }
+                            });
+                        }
+                    });
+                }, { threshold: 0.2, rootMargin: "-80px 0px -40% 0px" });
+
+                trackedSections.forEach(sec => navObserver.observe(sec));
+            }
+
+            // 5. Card Spotlight Follow (--mx, --my)
+            if (!isReducedMotion && window.matchMedia("(pointer: fine)").matches) {
+                const cards = document.querySelectorAll(".bento-card, .use-case-card, .pipeline-step-card");
+                cards.forEach(card => {
+                    card.addEventListener("pointermove", (e) => {
+                        const rect = card.getBoundingClientRect();
+                        card.style.setProperty("--mx", `${e.clientX - rect.left}px`);
+                        card.style.setProperty("--my", `${e.clientY - rect.top}px`);
+                    }, { passive: true });
+                });
+            }
+
+            // 6. Magnetic Button Follow
+            if (!isReducedMotion && window.matchMedia("(pointer: fine)").matches) {
+                const magneticBtns = document.querySelectorAll(".btn-hero-primary, .btn-hero-secondary, .btn-gradient, .btn-outline, .nav-btn-create");
+                magneticBtns.forEach(btn => {
+                    btn.addEventListener("mousemove", (e) => {
+                        const rect = btn.getBoundingClientRect();
+                        const x = e.clientX - rect.left - rect.width / 2;
+                        const y = e.clientY - rect.top - rect.height / 2;
+                        btn.style.transform = `translate(${x * 0.16}px, ${y * 0.16}px)`;
+                    });
+                    btn.addEventListener("mouseleave", () => {
+                        btn.style.transform = "";
+                    });
+                });
+            }
+
+            // 7. Smooth Scroll for Explore Button
+            if (exploreBtn) {
+                exploreBtn.addEventListener("click", (e) => {
+                    e.preventDefault();
+                    const target = document.getElementById("capabilities");
+                    if (target) {
+                        target.scrollIntoView({ behavior: "smooth" });
+                    }
+                });
+            }
+        });
+    </script>
+</body>
+</html>

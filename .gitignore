@@ -31,37 +31,29 @@ env/
 *.code-workspace
 
 ### Logs
+logs/
 *.log
 
 ### Local outputs and artifacts
-output/
-*.docx
+output/*.docx
+!output/.gitkeep
+
+### Databases
+*.db
+*.sqlite3
+
+### Scratch / temporary files
+scratch/
 
 ### Data and caches
 data/
-data/chroma_db_test/
 knowledge_base/chroma_db/
 chromadb/
-*.sqlite3
 
 ### OS files
 Thumbs.db
 Desktop.ini
+.DS_Store
 
 ### Node (if used for tooling)
 node_modules/
-docs/review_1_document.md 
-scratch/
-docs/review_1_document.md
-evaluation_report.md 
-evaluation_results.json 
-"diagnose_retrieval_anomaly.py\evaluation_harness.py\scripts/filter_citation_heavy_chunks.py" 
-evaluation_harness.py 
-diagnose_retrieval_anamoly.py  
-scripts/filter_citation_heavy_chunks.py  
-diagnose_retrieval_anamoly.py 
-diagnose_retrieval_anomaly.py 
-dss_users.db 
-frontend/assets/
-screenshot_audit.py
-test_frontend_fixes.py

@@ -1,0 +1,139 @@
+Document Title: A Neuro-Symbolic Decision Support System for Arbitrability Determination in Indian Trademark Disputes
+================================================================================
+
+[0] A Neuro-Symbolic Decision Support System for Arbitrability Determination in Indian Trademark Disputes
+
+[1] [Author Name]
+
+[2] Department of Computer Science
+
+[3] [Institution Name], [City], India
+
+[4] [email]@[institution].edu
+
+[5] Abstract— Arbitral tribunals in India must resolve a threshold question before any dispute reaches the merits: is this dispute arbitrable at all? Indian courts have developed a body of doctrine around this question, most notably through Booz Allen & Hamilton v. SBI Home Finance [1] and Vidya Drolia v. Durga Trading Corporation [2], yet applying these tests correctly to a given fact pattern requires careful legal reasoning rather than mechanical lookup. Large language models are increasingly proposed as aids for this kind of legal analysis, but empirical work has shown that retrieval-augmented generation, while an improvement over unaided generation, does not eliminate hallucination in legal outputs [12], [15]. This paper presents a decision support system for trademark arbitration that addresses this concern architecturally: a deterministic rule engine encodes the Booz Allen and Vidya Drolia tests directly, isolating the arbitrability determination from generative drift, while a tiered retrieval pipeline and a constrained large language model layer handle case retrieval and report drafting downstream of that decision. We describe the system architecture, the statutory tests it operationalizes, and preliminary testing across seventeen fact patterns spanning license disputes, brand-similarity claims, and franchise terminations. We situate the system relative to recent Indian legal AI systems, including hybrid retrieval-augmented generation frameworks, online dispute resolution policy proposals, and AI-in-arbitration literature, and identify a specific gap: no existing system treats arbitrability determination, as distinct from outcome prediction or general legal question answering, as a task suited to an explicit symbolic decision layer. We outline the evaluation work required to substantiate the system's reliability claims at scale.
+
+[6] Keywords— arbitrability, neuro-symbolic AI, legal decision support, retrieval-augmented generation, Indian arbitration law, trademark disputes, online dispute resolution, large language models
+
+[7] 
+
+[8] I. INTRODUCTION
+
+[9] Section 34 of the Arbitration and Conciliation Act, 1996 permits an Indian court to set aside an arbitral award where the subject matter of the dispute was not capable of settlement by arbitration under the law in force [3]. An arbitrator who proceeds to decide a dispute that was never arbitrable risks producing an award with no legal effect, regardless of how sound the reasoning on the merits may be. Determining arbitrability is therefore a jurisdictional gate that must be correctly navigated before the substantive dispute can be addressed at all.
+
+[10] The test for arbitrability under Indian law has been shaped substantially by two Supreme Court decisions. Booz Allen & Hamilton Inc. v. SBI Home Finance Ltd. [1] distinguished disputes that are actions in rem, generally non-arbitrable, from actions in personam, generally arbitrable, and identified categories of disputes, including matters of trademark registration and cancellation, that fall within the exclusive domain of specified statutory authorities. Vidya Drolia v. Durga Trading Corporation [2] refined this into a four-fold test, asking whether a dispute involves rights in rem, affects third-party rights, requires centralised adjudication, or is expressly or impliedly non-arbitrable under a governing statute.
+
+[11] Large language models have been proposed with increasing frequency as tools for legal issue-spotting and drafting. Retrieval-augmented generation (RAG) is often presented as a mitigation for hallucination, on the reasoning that grounding a model's output in retrieved statutory and case-law text anchors its reasoning to authoritative sources. Empirical evaluation has complicated this picture: Magesh et al. [12] found that even leading commercial legal-AI products employing RAG hallucinated in a non-trivial share of outputs, with many errors traceable to failures in retrieval rather than generation, and Pipitone and Alami [15] introduced a dedicated benchmark because retrieval quality itself required separate evaluation from generation quality. These findings matter directly for a system whose central output is a binary jurisdictional determination.
+
+[12] This paper describes the Trademark Arbitration Decision Support System (Trademark DSS), which responds to this concern at the architectural level by separating the arbitrability determination, computed by a deterministic rule engine encoding [1] and [2] directly against structured dispute facts, from the drafting of the surrounding legal report, produced by a large language model operating under an explicit statute-before-case-law constraint and grounded in case law retrieved through a tiered pipeline.
+
+[13] The remainder of this paper is organised as follows. Section II situates the system relative to recent Indian legal AI systems and neuro-symbolic legal AI literature. Section III sets out the statutory tests the system operationalizes. Section IV describes the system architecture. Section V discusses implementation. Section VI reports preliminary testing. Section VII discusses novelty, strengths, and limitations, and Section VIII concludes with the evaluation work required before the system's reliability claims can be made at scale.
+
+[14] II. RELATED WORK
+
+[15] A. Hybrid retrieval-augmented systems for Indian law
+
+[16] The closest architectural relative to the present system is the domain-partitioned hybrid RAG framework proposed by Goel et al. [5], which integrates three specialised retrieval pipelines, covering Supreme Court case law, statutory and constitutional text, and the Indian Penal Code, behind an agentic query router and a legal knowledge graph, reporting a substantial improvement in an LLM-as-judge pass rate over a RAG-only baseline. That system targets general-purpose Indian legal research query answering across a broad statutory base; the present system targets a single, narrowly codified decision task, trademark arbitrability, and incorporates an explicit symbolic rule layer rather than resolving the determination through retrieval and generation alone. The evaluation methodology of [5], particularly its use of LLM-as-judge scoring, is a useful reference for the evaluation programme outlined in Section VIII.
+
+[17] Mubeen et al. [8] present LegalEase, a RAG-based legal question-answering system for Indian law built on FAISS and ChromaDB with a multilingual translation feature, evaluated across multiple large language model backends using ROUGE and semantic-similarity metrics. LegalEase is a general legal-access tool oriented toward simplifying legal language for lay users; it does not implement a jurisdictional decision layer or address arbitrability specifically, but its retrieval stack and multi-model evaluation design are structurally comparable to the present system's retrieval and drafting layers. Niyam SahaAI [9], an open-source RAG-based legal assistant for Indian law later continued under the name LawGlance, is similarly retrieval-centric and general-purpose; it does not implement deterministic legal-rule screening or any domain-specific decision logic, and is included here as evidence of the growing open-source ecosystem around Indian legal RAG tooling rather than as a close architectural comparator.
+
+[18] B. Trademark-specific and arbitration-specific AI applications
+
+[19] Singh and Richa [6] examine the application of artificial intelligence within the trademark examination process in India, addressing tasks such as conflicting-mark search, goods and services classification, and infringement monitoring at the level of the Trade Marks Registry. This work is trademark-specific and India-specific, aligning with the present system's domain, but addresses the administrative examination process rather than dispute arbitrability or arbitral decision support, and does not propose or evaluate a working AI system for the latter task.
+
+[20] Junaid [10] surveys the prospective role of artificial intelligence in India's online arbitration, covering case management automation, predictive analytics, and comparative practice in Singapore, the United Kingdom, and the United States, and concludes with policy recommendations for ethical AI integration into arbitration. This paper is a policy-level analysis rather than a working system, and does not address arbitrability determination as a distinct computational task; its comparative and policy framing is nonetheless useful context for situating the present system's design choices, particularly the decision to keep the jurisdictional determination deterministic and auditable given the accountability and transparency concerns [10] raises for AI in arbitration generally.
+
+[21] C. Online dispute resolution policy
+
+[22] The NITI Aayog Expert Committee on ODR [7] sets out a national policy roadmap for online dispute resolution in India, explicitly identifying intelligent decision-support systems, machine learning, and smart negotiation tools as components of a future ODR ecosystem, alongside structural and regulatory recommendations for scaling ODR adoption. This report operates at the level of policy and infrastructure rather than system design, but its framing of AI-assisted decision support as a named, anticipated component of India's ODR future directly motivates the present system's applied contribution: a working instantiation of the specific decision-support capability the policy literature anticipates but does not itself build.
+
+[23] D. Neuro-symbolic legal reasoning and legal RAG reliability
+
+[24] Wei et al. [11] propose a neuro-symbolic framework for legal judgment prediction combining large-language-model fact extraction with a first-order-logic rule system, and Colelough and Regli [16] survey neuro-symbolic AI in law more broadly, identifying explainability of derived symbolic logic as a persistent open problem. The present system follows the same general philosophy, using an LLM where fluency is an asset, namely drafting, and a deterministic rule layer where auditability is paramount, namely the jurisdictional determination, but departs from [11] in targeting the antecedent gatekeeping question rather than case outcome prediction. Lewis et al. [13] introduced retrieval-augmented generation as a general grounding technique; Magesh et al. [12] and Pipitone and Alami [15] provide the empirical basis, discussed in Section I, for why grounding alone is an incomplete solution to legal hallucination, motivating the present system's decision to keep its highest-stakes output outside the generative pathway entirely. Malik et al. [14] introduced the ILDC corpus for Indian legal judgment prediction, representative of the broader Indian legal NLP infrastructure this system draws on for its general design assumptions about Indian legal text.
+
+[25] III. LEGAL BACKGROUND: THE ARBITRABILITY TEST
+
+[26] Booz Allen & Hamilton Inc. v. SBI Home Finance Ltd. [1] held that disputes classified as actions in rem are generally not arbitrable, and identified categories, including matters relating to the grant, revocation, and registration of intellectual property rights, as falling within the exclusive domain of designated statutory authorities. Vidya Drolia v. Durga Trading Corporation [2] restated this as a four-fold test: a dispute is non-arbitrable where it involves rights in rem, directly affects third-party rights, requires centralised adjudication before a specialised statutory forum, or is expressly or impliedly barred from arbitration by statute. Applied to trademark disputes under the Trade Marks Act, 1999 [4], registration, cancellation, and rectification disputes, and infringement claims against parties with no contractual privity to the claimant, are treated as generally non-arbitrable; disputes arising from a licensing, distribution, or franchise agreement containing a valid arbitration clause are treated as generally arbitrable.
+
+[27] IV. SYSTEM ARCHITECTURE
+
+[28] A. Overview
+
+[29] The system comprises four stages operating over structured dispute intake: an arbitrability decision engine, a landmark case retrieval layer, a large language model drafting layer, and a report synthesis stage assembling the outputs into a structured document. The arbitrability determination is computed entirely outside the language model layer.
+
+[30] B. Arbitrability decision engine
+
+[31] Dispute intake captures the parties, the trademark in dispute, dispute type, whether a contract exists between the parties, whether the dispute affects third parties, and a free-text description. The decision engine applies the [1] and [2] tests as sequential rule sets over these fields, matching against keyword sets associated with in-rem categories, such as registration and cancellation disputes, and in-personam categories, such as licensing and distribution disputes. The engine returns a binary determination together with its statutory and case-law basis, which downstream stages are constrained to cite rather than independently generate.
+
+[32] C. Landmark case retrieval
+
+[33] Retrieval proceeds through a tiered pipeline: a live query against a case-law API as the primary source, a local vector store built over a curated corpus of Indian trademark and arbitration judgments as a fallback, and a small curated registry of established landmark cases as a final fallback. This design directly reflects the retrieval-failure concerns raised in [12] and [15].
+
+[34] D. Constrained drafting layer
+
+[35] Report narrative is produced by a large language model operating under an explicit constraint requiring statutory text to be cited before case authority in every substantive section. Generation is attempted first against a primary hosted model, with automatic fallback to a secondary hosted model and, where both are unavailable, a locally hosted model, and a deterministic fallback template where all three tiers fail.
+
+[36] E. Report synthesis
+
+[37] Outputs are assembled into a structured document comprising an arbitrability determination with statutory basis, a landmark case analysis matrix, issues for determination, applicable statutory provisions and their judicial interpretation, a proposed award framework, and an adversarial legal analysis presenting arguments for and against the claimant.
+
+[38] V. IMPLEMENTATION
+
+[39] The system is implemented as a FastAPI backend with a single-page frontend. The arbitrability engine and report generator are implemented in Python without external model dependencies. The retrieval layer uses a local persistent vector store with sentence-transformer embeddings alongside a live case-law API integration. The drafting layer uses a hosted large language model as primary generator, with a second hosted model and a locally hosted model as successive fallbacks. Report assembly produces a structured Word document.
+
+[40] VI. PRELIMINARY EVALUATION
+
+[41] At the time of writing, the system has been exercised against seventeen distinct fact patterns spanning license disputes, brand-similarity and passing-off claims, competing registrations, franchise terminations, and disputes involving a foreign claimant, of which two have been formalised into a structured test harness with documented expected outcomes. This testing confirms the system produces structurally complete reports across this range and has surfaced a specific limitation, discussed in Section VII, namely that classification currently keys primarily off the categorical dispute-type field rather than the free-text description. We report this limitation explicitly because current testing has not included a labelled ground-truth dataset against which precision, recall, or F1 could be computed; Section VIII sets out the evaluation design intended to close this gap.
+
+[42] VII. DISCUSSION
+
+[43] A. Novelty
+
+[44] Relative to the systems surveyed in Section II, the present system's contribution is the application of an explicit symbolic decision layer to trademark arbitrability determination specifically, a task addressed by neither the general-purpose Indian legal RAG systems [5], [8], [9], the trademark-examination AI literature [6], the arbitration policy and survey literature [7], [10], nor the neuro-symbolic legal judgment prediction literature [11], which targets case outcomes rather than the antecedent jurisdictional question.
+
+[45] B. Strengths
+
+[46] The architecture directly addresses the retrieval-and-generation failure modes documented in [12] and [15] by removing the highest-stakes decision from the generative pathway entirely. The tiered retrieval and generation fallbacks provide operational resilience consistent with the practical deployment concerns raised in [10].
+
+[47] C. Limitations
+
+[48] Three limitations are acknowledged directly. First, the rule engine's reliance on the categorical dispute-type field creates a classification blind spot on fact patterns where the structured field and free-text narrative disagree. Second, the landmark case registry underlying the tertiary retrieval fallback currently contains a small number of curated cases. Third, the system has not yet been evaluated against a labelled dataset of sufficient size to report standard classification metrics, nor compared against a large-language-model-only baseline, both necessary before any reliability claim can be substantiated empirically rather than architecturally.
+
+[49] VIII. CONCLUSION AND FUTURE WORK
+
+[50] This paper has described a neuro-symbolic decision support system for arbitrability determination in Indian trademark disputes, situated the system relative to recent Indian legal AI systems and neuro-symbolic legal AI literature, and identified a gap the system addresses: the absence of prior work treating arbitrability determination as a task suited to an explicit symbolic decision layer, as distinct from outcome prediction [11] or general legal question answering [5], [8], [9]. Future work required before publication of a full evaluation study includes construction of a labelled fact-pattern dataset with arbitrability ground truth verified by a legal domain expert, an ablation study comparing the present architecture against a large-language-model-only baseline, retrieval-precision benchmarking following the methodology of [15], and, where feasible, evaluation of report quality by practising arbitrators or intellectual property counsel.
+
+[51] . REFERENCES
+
+[52] [1] Booz Allen & Hamilton Inc. v. SBI Home Finance Ltd., (2011) 5 SCC 532 (India).
+
+[53] [2] Vidya Drolia v. Durga Trading Corporation, (2021) 2 SCC 1 (India).
+
+[54] [3] The Arbitration and Conciliation Act, 1996, No. 26, Acts of Parliament, 1996 (India).
+
+[55] [4] The Trade Marks Act, 1999, No. 47, Acts of Parliament, 1999 (India).
+
+[56] [5] R. Goel, S. P. Kumar, A. Agrawal, D. Poddar, P. Narang, and D. Kumar, "Domain-Partitioned Hybrid RAG for Legal Reasoning: Toward Modular and Explainable Legal AI for India," arXiv:2602.23371, 2026.
+
+[57] [6] Y. Singh and Richa, "Application of Artificial Intelligence in Trademark Examination Process in India," CUSB Law Journal, vol. 1, Central Univ. of South Bihar, 2025.
+
+[58] [7] NITI Aayog Expert Committee on ODR, "Designing the Future of Dispute Resolution: The ODR Policy Plan for India," NITI Aayog, New Delhi, India, Oct. 2021.
+
+[59] [8] F. Mubeen, A. Mehdi, M. A. Haque, et al., "Redefining legal access: a RAG-based AI system for Indian law," Human-Intelligent Systems Integration, vol. 7, pp. 87-98, 2025.
+
+[60] [9] "Niyam SahaAI: An open-source RAG-based legal AI assistant for Indian law," GitHub repository, 2024. [Online]. Available: https://github.com/niyam-sahaai/niyam-sahaai
+
+[61] [10] M. Junaid, "Justice Reimagined: The Role of Artificial Intelligence in India's Online Arbitration," International Journal for Multidisciplinary Research, vol. 6, no. 6, Nov.-Dec. 2024.
+
+[62] [11] Z. Wei, C. Yu, L. Gan, et al., "A neuro-symbolic framework for civil legal judgment prediction," Artificial Intelligence and Law, 2025.
+
+[63] [12] V. Magesh, F. Surani, M. Dahl, M. Suzgun, C. D. Manning, and D. E. Ho, "Hallucination-free? Assessing the reliability of leading AI legal research tools," Stanford RegLab preprint, 2024.
+
+[64] [13] P. Lewis et al., "Retrieval-augmented generation for knowledge-intensive NLP tasks," in Proc. NeurIPS, vol. 33, 2020.
+
+[65] [14] V. Malik et al., "ILDC for CJPE: Indian legal documents corpus for court judgment prediction and explanation," in Proc. ACL-IJCNLP, 2021.
+
+[66] [15] N. Pipitone and G. H. Alami, "LegalBench-RAG: A benchmark for retrieval-augmented generation in the legal domain," arXiv preprint, 2024.
+
+[67] [16] B. C. Colelough and W. Regli, "Neuro-symbolic AI in 2024: A systematic review," arXiv preprint, 2025.
+

@@ -1,5 +1,8 @@
 import sys
-sys.path.insert(0, '.')
+from pathlib import Path
+_REPO_ROOT = str(Path(__file__).resolve().parents[1])
+if _REPO_ROOT not in sys.path:
+    sys.path.insert(0, _REPO_ROOT)
 
 # Apply pydantic v1 compat patch for Python 3.14
 import pydantic_v1_compat

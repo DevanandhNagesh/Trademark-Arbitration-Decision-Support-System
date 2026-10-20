@@ -3,6 +3,10 @@
 from __future__ import annotations
 
 import os
+import hashlib
+import hmac
+import re
+import time
 from datetime import datetime, timedelta, timezone
 from typing import Any, Dict, List, Optional
 
@@ -21,6 +25,10 @@ ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "1440"))  # 24 hours
 
 VALID_ROLES = {"lawyer", "company", "admin"}
+PUBLIC_SIGNUP_ROLES = {"lawyer", "company"}
+
+PHOTO_SIG_EXPIRY_SECONDS = 600  # 10 minutes
+PHOTO_REF_PATTERN = re.compile(r"^[A-Za-z0-9_\-]+$")
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login", auto_error=False)
 
@@ -124,3 +132,42 @@ def require_role(allowed_roles: List[str]):
 
 # Convenient preset for admin-only endpoints
 require_admin = require_role(["admin"])
+
+
+def validate_photo_reference(photo_reference: str) -> bool:
+    """Validate photo_reference string format and length."""
+    if not photo_reference or not isinstance(photo_reference, str):
+        return False
+    if len(photo_reference) > 1000:
+        return False
+    return bool(PHOTO_REF_PATTERN.match(photo_reference))
+
+
+def generate_signed_photo_url(
+    photo_reference: str, maxwidth: int = 400, expires_in_sec: int = PHOTO_SIG_EXPIRY_SECONDS
+) -> str:
+    """Generate an HMAC-signed photo proxy URL with expiry timestamp."""
+    expires_at = int(time.time()) + expires_in_sec
+    clamped_width = max(100, min(800, int(maxwidth)))
+    msg = f"{photo_reference}:{expires_at}:{clamped_width}".encode("utf-8")
+    sig = hmac.new(SECRET_KEY.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+    return f"/places/photo?photo_reference={photo_reference}&maxwidth={clamped_width}&expires={expires_at}&sig={sig}"
+
+
+def verify_photo_signature(photo_reference: str, maxwidth: int, expires: int, sig: str) -> bool:
+    """Verify HMAC signature and expiration timestamp for photo proxy requests."""
+    if not sig or not expires or not photo_reference:
+        return False
+    try:
+        expires_int = int(expires)
+        maxwidth_int = int(maxwidth)
+    except (ValueError, TypeError):
+        return False
+
+    if int(time.time()) > expires_int:
+        return False
+
+    clamped_width = max(100, min(800, maxwidth_int))
+    msg = f"{photo_reference}:{expires_int}:{clamped_width}".encode("utf-8")
+    expected_sig = hmac.new(SECRET_KEY.encode("utf-8"), msg, hashlib.sha256).hexdigest()
+    return hmac.compare_digest(sig, expected_sig)

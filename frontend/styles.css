@@ -1660,3 +1660,630 @@ select:focus {
     }
 }
 
+/* ════════════════════════════════════════════════════════════════
+   SPRINT 4 — APP SHELL, DASHBOARD LIVE CARDS & LAWYER FINDER
+   ════════════════════════════════════════════════════════════════ */
+
+/* Sidebar Entrance Animation */
+@keyframes sidebarEntrance {
+    from {
+        opacity: 0;
+        transform: translateX(-16px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.sidebar {
+    animation: sidebarEntrance 0.4s cubic-bezier(0.16, 0.84, 0.44, 1) forwards;
+}
+
+/* Sidebar Active Link Gold Highlight */
+.sidebar-nav .nav-item.active {
+    background: linear-gradient(90deg, rgba(201, 168, 76, 0.22) 0%, rgba(201, 168, 76, 0.04) 100%);
+    color: var(--accent-gold-light);
+    border-color: rgba(201, 168, 76, 0.4);
+    border-left: 3px solid var(--accent-gold);
+    font-weight: 600;
+    box-shadow: inset 0 0 12px rgba(201, 168, 76, 0.08);
+}
+
+.sidebar-nav .nav-item.active svg {
+    color: var(--accent-gold-light);
+}
+
+/* Topbar Global Search */
+.header-search-container {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(17, 24, 39, 0.65);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 6px 14px;
+    min-width: 280px;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+}
+
+.header-search-container:focus-within {
+    border-color: var(--accent-gold);
+    background: rgba(17, 24, 39, 0.9);
+    box-shadow: 0 0 0 3px rgba(201, 168, 76, 0.15);
+}
+
+.header-search-container svg {
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.header-search-input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    font-family: inherit;
+    width: 100%;
+    outline: none;
+}
+
+.header-search-input::placeholder {
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+/* Header Notification Bell */
+.header-icon-btn {
+    background: rgba(17, 24, 39, 0.6);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    position: relative;
+}
+
+.header-icon-btn:hover {
+    border-color: var(--accent-gold);
+    color: var(--accent-gold-light);
+    background: rgba(201, 168, 76, 0.1);
+    transform: translateY(-1px);
+}
+
+/* User Avatar Initials */
+.user-avatar {
+    width: 34px;
+    height: 34px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.35) 0%, rgba(27, 58, 107, 0.65) 100%);
+    border: 1.5px solid var(--accent-gold);
+    color: var(--accent-gold-light);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 10px rgba(201, 168, 76, 0.25);
+    flex-shrink: 0;
+}
+
+/* My Cases Card Stat Breakdown */
+.cases-stat-breakdown {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px solid rgba(42, 51, 71, 0.6);
+}
+
+.case-stat-pill {
+    background: rgba(10, 14, 26, 0.7);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 4px;
+    text-align: center;
+}
+
+.case-stat-val {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.case-stat-val.pending { color: var(--accent-gold-light); }
+.case-stat-val.approved { color: #34D399; }
+.case-stat-val.rejected { color: #F87171; }
+
+.case-stat-lbl {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--text-muted);
+    margin-top: 2px;
+}
+
+/* SOLID Panel (Not Glass) for Recent Cases */
+.solid-panel {
+    background: #0E1424;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+    position: relative;
+    overflow: hidden;
+}
+
+.cases-table-container {
+    width: 100%;
+    overflow-x: auto;
+}
+
+.cases-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+    text-align: left;
+}
+
+.cases-table th {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    color: var(--text-muted);
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: #0A0F1D;
+}
+
+.cases-table td {
+    padding: 14px 16px;
+    border-bottom: 1px solid rgba(42, 51, 71, 0.4);
+    color: var(--text-secondary);
+    vertical-align: middle;
+}
+
+.cases-table tr:hover td {
+    background: rgba(201, 168, 76, 0.04);
+    color: var(--text-primary);
+}
+
+.case-id-badge {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-gold-light);
+    background: rgba(201, 168, 76, 0.12);
+    padding: 3px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(201, 168, 76, 0.3);
+    display: inline-block;
+}
+
+.status-pill {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    padding: 4px 10px;
+    border-radius: 12px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.status-pill.approved {
+    background: rgba(16, 185, 129, 0.15);
+    color: #34D399;
+    border: 1px solid rgba(16, 185, 129, 0.4);
+}
+
+.status-pill.pending {
+    background: rgba(201, 168, 76, 0.15);
+    color: var(--accent-gold-light);
+    border: 1px solid rgba(201, 168, 76, 0.4);
+}
+
+.status-pill.rejected {
+    background: rgba(239, 68, 68, 0.15);
+    color: #F87171;
+    border: 1px solid rgba(239, 68, 68, 0.4);
+}
+
+/* Skeleton Shimmer Loading */
+.skeleton-shimmer {
+    background: linear-gradient(90deg, rgba(28, 35, 51, 0.6) 25%, rgba(42, 51, 71, 0.8) 50%, rgba(28, 35, 51, 0.6) 75%);
+    background-size: 200% 100%;
+    animation: shimmer 1.5s infinite;
+    border-radius: 6px;
+    height: 18px;
+}
+
+@keyframes shimmer {
+    0% { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* Empty State */
+.cases-empty-state {
+    text-align: center;
+    padding: 48px 24px;
+    color: var(--text-secondary);
+}
+
+.cases-empty-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    color: var(--accent-gold);
+    opacity: 0.85;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   LAWYER FINDER PAGE STYLES
+   ════════════════════════════════════════════════════════════════ */
+.finder-layout {
+    display: grid;
+    grid-template-columns: 1.1fr 0.9fr;
+    gap: 20px;
+    height: calc(100vh - 120px);
+    min-height: 580px;
+}
+
+@media (max-width: 1024px) {
+    .finder-layout {
+        grid-template-columns: 1fr;
+        height: auto;
+    }
+}
+
+.finder-map-pane {
+    display: flex;
+    flex-direction: column;
+    border-radius: 14px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    background: #080C16;
+    position: relative;
+    min-height: 480px;
+}
+
+.finder-controls-bar {
+    background: rgba(14, 20, 36, 0.92);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    padding: 14px 18px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    align-items: center;
+    border-bottom: 1px solid var(--border);
+    z-index: 1000;
+}
+
+.finder-input-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(10, 14, 26, 0.8);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    flex: 1;
+    min-width: 200px;
+}
+
+.finder-input-group input {
+    background: transparent;
+    border: none;
+    color: var(--text-primary);
+    font-size: 13px;
+    outline: none;
+    width: 100%;
+}
+
+.finder-radius-select {
+    background: rgba(10, 14, 26, 0.8);
+    border: 1px solid var(--border);
+    color: var(--text-primary);
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 7px 12px;
+    outline: none;
+    cursor: pointer;
+}
+
+.finder-btn-gold {
+    background: linear-gradient(135deg, #C9A84C 0%, #E8C96A 100%);
+    color: #0A0E1A;
+    font-weight: 600;
+    font-size: 13px;
+    border: none;
+    border-radius: 8px;
+    padding: 8px 16px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.finder-btn-gold:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 14px rgba(201, 168, 76, 0.35);
+}
+
+.finder-btn-secondary {
+    background: rgba(26, 35, 54, 0.7);
+    border: 1px solid var(--border);
+    color: var(--text-secondary);
+    font-size: 13px;
+    border-radius: 8px;
+    padding: 8px 14px;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.finder-btn-secondary:hover {
+    border-color: var(--accent-gold);
+    color: var(--text-primary);
+    background: rgba(201, 168, 76, 0.1);
+}
+
+#googleMap {
+    flex: 1;
+    width: 100%;
+    height: 100%;
+    min-height: 400px;
+    background: #060913;
+}
+
+/* Designed Error Panel when Google Maps JS Key is missing or script fails */
+.map-error-panel {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 36px 24px;
+    background: radial-gradient(circle at center, rgba(201, 168, 76, 0.06) 0%, rgba(10, 15, 29, 0.95) 75%);
+    border: 1px dashed rgba(201, 168, 76, 0.35);
+    border-radius: 12px;
+    margin: 16px;
+    min-height: 380px;
+}
+
+.map-error-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 50%;
+    background: rgba(201, 168, 76, 0.1);
+    border: 1.5px solid rgba(201, 168, 76, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-gold);
+    margin-bottom: 16px;
+}
+
+.map-error-title {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 8px;
+    font-family: 'DM Serif Display', serif;
+}
+
+.map-error-message {
+    font-size: 13px;
+    color: var(--text-secondary);
+    max-width: 360px;
+    line-height: 1.5;
+}
+
+.map-custom-locate-btn {
+    background: rgba(14, 20, 36, 0.92);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    width: 38px;
+    height: 38px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--accent-gold);
+    cursor: pointer;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+    margin: 12px;
+    transition: all 0.2s ease;
+}
+
+.map-custom-locate-btn:hover {
+    background: rgba(201, 168, 76, 0.2);
+    border-color: var(--accent-gold);
+    color: var(--accent-gold-light);
+    transform: translateY(-1px);
+}
+
+.finder-results-pane {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 14px;
+    border: 1px solid var(--border);
+    background: #0C1220;
+    min-height: 480px;
+}
+
+.finder-results-header {
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: #0E1526;
+}
+
+.finder-results-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.lawyer-card-item {
+    background: rgba(17, 24, 39, 0.85);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    gap: 16px;
+    cursor: pointer;
+    transition: transform 0.25s cubic-bezier(0.16, 0.84, 0.44, 1), border-color 0.2s ease, box-shadow 0.25s ease;
+    position: relative;
+}
+
+.lawyer-card-item:hover {
+    border-color: rgba(201, 168, 76, 0.45);
+    transform: translateY(-2px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.4), 0 0 12px rgba(201, 168, 76, 0.1);
+}
+
+.lawyer-card-item.selected {
+    border-color: var(--accent-gold);
+    background: rgba(201, 168, 76, 0.08);
+    box-shadow: 0 0 0 2px rgba(201, 168, 76, 0.35), 0 8px 24px rgba(0, 0, 0, 0.5);
+}
+
+.lawyer-thumbnail-box {
+    width: 64px;
+    height: 64px;
+    border-radius: 10px;
+    overflow: hidden;
+    background: rgba(201, 168, 76, 0.08);
+    border: 1px solid rgba(201, 168, 76, 0.2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.lawyer-thumbnail-box img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.lawyer-card-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.lawyer-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.lawyer-card-address {
+    font-size: 12.5px;
+    color: var(--text-secondary);
+    line-height: 1.4;
+}
+
+.lawyer-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 12px;
+}
+
+.lawyer-dist-badge {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--accent-gold-light);
+    background: rgba(201, 168, 76, 0.12);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(201, 168, 76, 0.25);
+}
+
+.dss-cat-tag {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: 0.5px;
+    color: var(--accent-gold);
+    background: rgba(201, 168, 76, 0.08);
+    padding: 2px 8px;
+    border-radius: 4px;
+    border: 1px solid rgba(201, 168, 76, 0.2);
+}
+
+.source-indicator {
+    font-size: 10.5px;
+    color: var(--text-muted);
+    font-family: "IBM Plex Mono", monospace;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+/* Google Maps Dark Theme InfoWindow & Control Overrides */
+.gm-style .gm-style-iw-c {
+    background: #0E1424 !important;
+    border: 1px solid rgba(201, 168, 76, 0.45) !important;
+    border-radius: 12px !important;
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.6) !important;
+    padding: 14px 16px !important;
+}
+
+.gm-style .gm-style-iw-t::after {
+    background: #0E1424 !important;
+    box-shadow: -2px 2px 2px rgba(0, 0, 0, 0.3) !important;
+}
+
+.gm-style .gm-style-iw-d {
+    overflow: hidden !important;
+    color: var(--text-primary) !important;
+    font-family: "IBM Plex Sans", sans-serif !important;
+}
+
+.gm-ui-hover-effect {
+    filter: invert(1) hue-rotate(180deg) !important;
+}
+
+@keyframes markerBounceScale {
+    0%, 100% { transform: translateY(0) scale(1.1); }
+    50% { transform: translateY(-8px) scale(1.2); }
+}
+
+.google-marker-selected {
+    animation: markerBounceScale 0.8s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .google-marker-selected {
+        animation: none !important;
+    }
+}
+

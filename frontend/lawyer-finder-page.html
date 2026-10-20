@@ -1,0 +1,975 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Trademark Arbitration DSS — Advocate Directory & Jurisdiction Map</title>
+    <!-- Authentication Guard (Protected Page) -->
+    <script type="module">
+        import { requireAuth } from "./auth-guard.js";
+        if (!requireAuth()) {
+            document.body.style.display = "none";
+        }
+    </script>
+    <link rel="stylesheet" href="styles.css" />
+</head>
+<body class="dashboard-page">
+    <!-- Global Gold Cursor Follow Spotlight -->
+    <div id="cursorGlow" class="cursor-glow" aria-hidden="true"></div>
+
+    <!-- Scroll Progress Top Bar -->
+    <div class="scroll-progress" id="scrollProgress" aria-hidden="true"></div>
+
+    <div class="app">
+        <!-- Sidebar Navigation -->
+        <aside class="sidebar reveal" style="--i: 0;">
+            <div class="brand">
+                <h1>Trademark DSS</h1>
+                <p>Arbitration Decision Support System</p>
+            </div>
+
+            <nav class="sidebar-nav">
+                <div class="nav-section-label">WORKSPACE</div>
+                <a href="/dashboard.html" class="nav-item" id="navDashboard">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"></rect><rect x="14" y="3" width="7" height="7"></rect><rect x="14" y="14" width="7" height="7"></rect><rect x="3" y="14" width="7" height="7"></rect></svg>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/index.html" class="nav-item" id="navNewAnalysis">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                    <span>New Analysis</span>
+                </a>
+                <a href="/dashboard.html#recentCasesSection" class="nav-item" id="navMyCases">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
+                    <span>My Cases</span>
+                </a>
+                <a href="#reports" class="nav-item" style="opacity: 0.65; cursor: not-allowed;" title="Reports Archive (Sprint 9)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line></svg>
+                    <span>Reports</span>
+                    <span class="nav-badge-gold" style="opacity: 0.7; font-size: 8px;">SOON</span>
+                </a>
+                <a href="/lawyer-finder-page.html" class="nav-item active" id="navLawyerFinder">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polygon points="12 8 8 12 12 16 16 12 12 8"></polygon></svg>
+                    <span>Lawyer Finder</span>
+                    <span class="nav-badge-gold">NEW</span>
+                </a>
+
+                <!-- REVIEW section: rendered only for lawyer/admin roles -->
+                <div id="sidebarReviewSection" style="display: none;">
+                    <div class="nav-section-label" style="margin-top: 18px;">REVIEW</div>
+                    <a href="#pending-review" class="nav-item" style="opacity: 0.65; cursor: not-allowed;" title="Pending Review (Sprint 9)">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="9" y1="15" x2="15" y2="15"></line></svg>
+                        <span>Pending Review</span>
+                        <span class="nav-badge-gold" style="opacity: 0.7; font-size: 8px;">SOON</span>
+                    </a>
+                </div>
+
+                <!-- SYSTEM section: Profile, Settings, Help & Support -->
+                <div class="nav-section-label" style="margin-top: 18px;">SYSTEM</div>
+                <a href="#profile" class="nav-item" style="opacity: 0.65; cursor: not-allowed;" title="Profile (Sprint 9)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
+                    <span>Profile</span>
+                    <span class="nav-badge-gold" style="opacity: 0.7; font-size: 8px;">SOON</span>
+                </a>
+                <a href="#settings" class="nav-item" style="opacity: 0.65; cursor: not-allowed;" title="Settings (Sprint 9)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+                    <span>Settings</span>
+                    <span class="nav-badge-gold" style="opacity: 0.7; font-size: 8px;">SOON</span>
+                </a>
+                <a href="#help" class="nav-item" style="opacity: 0.65; cursor: not-allowed;" title="Help & Support (Sprint 9)">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    <span>Help & Support</span>
+                    <span class="nav-badge-gold" style="opacity: 0.7; font-size: 8px;">SOON</span>
+                </a>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="system-status-indicator">
+                    <span class="status-dot-green"></span>
+                    <span>System Online (AI + ChromaDB)</span>
+                </div>
+            </div>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main">
+            <!-- Topbar Header -->
+            <header class="topbar reveal" style="--i: 0;">
+                <div class="title" style="white-space: nowrap;">Advocate Directory & Jurisdiction Map</div>
+
+                <!-- Global Search Input -->
+                <div class="header-search-container" role="search">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                    <input type="text" class="header-search-input" id="globalSearchInput" placeholder="Filter advocates by name or address..." aria-label="Filter advocates" />
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 14px; margin-left: auto;">
+                    <!-- Notification Bell (Static, no fake counts) -->
+                    <button type="button" class="header-icon-btn" aria-label="Notifications" title="Notifications">
+                        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path><path d="M13.73 21a2 2 0 0 1-3.46 0"></path></svg>
+                    </button>
+
+                    <!-- User Information & Profile -->
+                    <div id="userNavSection" class="user-nav-badge" style="display: flex; align-items: center; gap: 10px;">
+                        <div class="user-avatar" id="userAvatar" title="User Profile">TD</div>
+                        <span id="userEmailBadge" class="user-email-text">Counsel</span>
+                        <span id="userRoleBadge" class="user-role-pill">lawyer</span>
+                        <button type="button" class="auth-action-btn" id="logoutBtn" aria-label="Sign out of system">Sign Out</button>
+                    </div>
+                </div>
+            </header>
+
+            <div class="dashboard-content" style="padding: 24px 32px; display: flex; flex-direction: column; gap: 16px;">
+                <!-- Page Eyebrow & Intro -->
+                <div class="dashboard-hero reveal" style="--i: 1;">
+                    <div class="eyebrow" style="color: var(--accent-gold); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; font-weight: 600;">GEOGRAPHIC JURISDICTION & ADVOCATE DIRECTORY</div>
+                    <h1 style="font-family: 'DM Serif Display', serif; font-size: 28px; color: var(--text-primary); margin: 4px 0 6px;">Find Legal Counsel & Arbitration Advocates</h1>
+                    <p style="color: var(--text-secondary); max-width: 820px; font-size: 13.5px; line-height: 1.45; margin: 0;">
+                        Locate verified trademark practitioners and arbitration counsel across Indian jurisdictions via Google Places. Inspect jurisdiction boundaries, distance proximity, and ratings with interactive Google Maps.
+                    </p>
+                </div>
+
+                <!-- Two-Column Finder Layout (Map Left, Results Right) -->
+                <div class="finder-layout reveal" style="--i: 2;">
+                    <!-- LEFT COLUMN: Interactive Google Map & Glass Search Controls -->
+                    <div class="finder-map-pane">
+                        <!-- Glass Controls Bar -->
+                        <div class="finder-controls-bar">
+                            <div class="finder-input-group">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="color: var(--accent-gold);"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <input type="text" id="finderLocationInput" placeholder="Enter city (e.g. New Delhi, Mumbai, Bengaluru)" value="New Delhi" aria-label="City or Jurisdiction" />
+                            </div>
+
+                            <select id="finderRadiusSelect" class="finder-radius-select" aria-label="Search Radius (km)">
+                                <option value="5">5 km</option>
+                                <option value="10" selected>10 km</option>
+                                <option value="25">25 km</option>
+                                <option value="50">50 km</option>
+                            </select>
+
+                            <button type="button" id="finderSearchBtn" class="finder-btn-gold">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                                <span>Search</span>
+                            </button>
+
+                            <button type="button" id="finderLocationBtn" class="finder-btn-secondary" title="Use device GPS">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path></svg>
+                                <span>Use My Location</span>
+                            </button>
+                        </div>
+
+                        <!-- Map & Error Container -->
+                        <div id="mapWrapper" style="position: relative; flex: 1; display: flex; flex-direction: column; width: 100%; min-height: 400px; background: #060913;">
+                            <div id="googleMap" role="region" aria-label="Jurisdiction Advocate Map"></div>
+                            
+                            <!-- Designed Error Panel (Shown if API key missing or script fails) -->
+                            <div id="mapErrorPanel" class="map-error-panel" style="display: none;">
+                                <div class="map-error-icon">
+                                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                </div>
+                                <div class="map-error-title">Interactive Map Unavailable</div>
+                                <div class="map-error-message">
+                                    Google Maps browser key is not configured or failed to load. The advocate directory list remains fully operational.
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Map Footbar info -->
+                        <div style="background: #0A0F1D; padding: 6px 14px; font-size: 11px; color: var(--text-muted); border-top: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; font-family: 'IBM Plex Mono', monospace;">
+                            <span id="mapStatusText">Ready • Seat: New Delhi (Supreme Court / Delhi HC)</span>
+                            <span id="mapEngineText">Google Maps JavaScript API (Dark Mode)</span>
+                        </div>
+                    </div>
+
+                    <!-- RIGHT COLUMN: Results Panel -->
+                    <div class="finder-results-pane">
+                        <div class="finder-results-header">
+                            <div>
+                                <span id="finderResultsCount" style="font-weight: 600; font-size: 14px; color: var(--text-primary);">Searching advocates...</span>
+                                <div id="finderResultsSubtext" style="font-size: 11px; color: var(--text-muted); font-family: 'IBM Plex Mono', monospace; margin-top: 2px;">Radius: 10 km • Google Places Verified</div>
+                            </div>
+                            <button type="button" id="sortDistanceBtn" class="finder-btn-secondary" style="font-size: 11px; padding: 5px 12px; gap: 6px;" title="Sort by Haversine Proximity">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                                <span>Sort by Distance</span>
+                            </button>
+                        </div>
+
+                        <!-- Advocate Results Scrollable List -->
+                        <div class="finder-results-list" id="finderResultsList">
+                            <!-- Skeleton Shimmer initial state -->
+                            <div class="skeleton-shimmer" style="height: 110px; border-radius: 12px; margin-bottom: 8px;"></div>
+                            <div class="skeleton-shimmer" style="height: 110px; border-radius: 12px; margin-bottom: 8px;"></div>
+                            <div class="skeleton-shimmer" style="height: 110px; border-radius: 12px;"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="motion.js"></script>
+
+    <script type="module">
+        // ── Auth & User Session Hydration ──────────────────────
+        const rawUser = sessionStorage.getItem("dss_user");
+        let currentUser = null;
+        if (rawUser) {
+            try {
+                currentUser = JSON.parse(rawUser);
+                const emailEl = document.getElementById("userEmailBadge");
+                const roleEl = document.getElementById("userRoleBadge");
+                const avatarEl = document.getElementById("userAvatar");
+
+                if (emailEl && currentUser.email) emailEl.textContent = currentUser.email;
+                if (roleEl && currentUser.role) roleEl.textContent = currentUser.role;
+                if (avatarEl && currentUser.email) {
+                    const namePart = currentUser.email.split("@")[0].replace(/[^a-zA-Z]/g, "");
+                    const initials = (namePart.slice(0, 2) || "TD").toUpperCase();
+                    avatarEl.textContent = initials;
+                }
+
+                // Render REVIEW section only for lawyer or admin roles
+                const reviewSec = document.getElementById("sidebarReviewSection");
+                if (reviewSec && (currentUser.role === "lawyer" || currentUser.role === "admin")) {
+                    reviewSec.style.display = "block";
+                }
+            } catch (e) {
+                console.error("Error parsing user session:", e);
+            }
+        }
+
+        const logoutBtn = document.getElementById("logoutBtn");
+        if (logoutBtn) {
+            logoutBtn.addEventListener("click", () => {
+                sessionStorage.removeItem("dss_token");
+                sessionStorage.removeItem("dss_jwt");
+                sessionStorage.removeItem("dss_user");
+                window.location.href = "/auth.html";
+            });
+        }
+
+        // ── Gavel & Scales Placeholder SVG (Never broken images) ──
+        const GAVEL_SCALES_SVG = `
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#C9A84C" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="m14 13-7.5 7.5c-.83.83-2.17.83-3 0 0 0 0 0 0 0a2.12 2.12 0 0 1 0-3L11 10"></path>
+                <path d="m16 16 6-6"></path>
+                <path d="m8 8 6-6"></path>
+                <path d="m9 7 8 8"></path>
+                <path d="m21 11-8-8"></path>
+            </svg>
+        `;
+
+        // ── Inline Dark Cinematic Style for Google Maps (Navy/Gold) ──
+        const DARK_MAP_STYLES = [
+            { elementType: "geometry", stylers: [{ color: "#0B1222" }] },
+            { elementType: "labels.text.stroke", stylers: [{ color: "#0B1222" }] },
+            { elementType: "labels.text.fill", stylers: [{ color: "#9CA3AF" }] },
+            {
+                featureType: "administrative.locality",
+                elementType: "labels.text.fill",
+                stylers: [{ color: "#E8C96A" }],
+            },
+            {
+                featureType: "poi",
+                elementType: "labels.text.fill",
+                stylers: [{ color: "#8E9BB0" }],
+            },
+            {
+                featureType: "poi.park",
+                elementType: "geometry",
+                stylers: [{ color: "#0F192C" }],
+            },
+            {
+                featureType: "road",
+                elementType: "geometry",
+                stylers: [{ color: "#1C263B" }],
+            },
+            {
+                featureType: "road",
+                elementType: "geometry.stroke",
+                stylers: [{ color: "#111827" }],
+            },
+            {
+                featureType: "road",
+                elementType: "labels.text.fill",
+                stylers: [{ color: "#9CA3AF" }],
+            },
+            {
+                featureType: "road.highway",
+                elementType: "geometry",
+                stylers: [{ color: "#2E3A52" }],
+            },
+            {
+                featureType: "road.highway",
+                elementType: "geometry.stroke",
+                stylers: [{ color: "#1F2937" }],
+            },
+            {
+                featureType: "road.highway",
+                elementType: "labels.text.fill",
+                stylers: [{ color: "#E8C96A" }],
+            },
+            {
+                featureType: "transit",
+                elementType: "geometry",
+                stylers: [{ color: "#162033" }],
+            },
+            {
+                featureType: "water",
+                elementType: "geometry",
+                stylers: [{ color: "#070A12" }],
+            },
+            {
+                featureType: "water",
+                elementType: "labels.text.fill",
+                stylers: [{ color: "#4B5563" }],
+            },
+        ];
+
+        // ── Custom SVG Pin Icons for Google Maps ───────────────
+        function getGoldPinIcon() {
+            return {
+                url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="32" height="40" viewBox="0 0 32 40" fill="none">
+                        <path d="M16 0C7.16 0 0 7.16 0 16C0 28 16 40 16 40C16 40 32 28 32 16C32 7.16 24.84 0 16 0Z" fill="#0E1424" stroke="#C9A84C" stroke-width="2.5"/>
+                        <circle cx="16" cy="16" r="6" fill="#E8C96A"/>
+                    </svg>
+                `),
+                scaledSize: new google.maps.Size(32, 40),
+                anchor: new google.maps.Point(16, 40),
+            };
+        }
+
+        function getSelectedPinIcon() {
+            return {
+                url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="42" height="52" viewBox="0 0 42 52" fill="none">
+                        <path d="M21 0C9.4 0 0 9.4 0 21C0 36.75 21 52 21 52C21 52 42 36.75 42 21C42 9.4 32.6 0 21 0Z" fill="#E8C96A" stroke="#FFFFFF" stroke-width="2.5"/>
+                        <circle cx="21" cy="21" r="8" fill="#0A0E1A"/>
+                        <circle cx="21" cy="21" r="4.5" fill="#E8C96A"/>
+                    </svg>
+                `),
+                scaledSize: new google.maps.Size(42, 52),
+                anchor: new google.maps.Point(21, 52),
+            };
+        }
+
+        function getCenterPinIcon() {
+            return {
+                url: "data:image/svg+xml;charset=UTF-8," + encodeURIComponent(`
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28" fill="none">
+                        <circle cx="14" cy="14" r="12" stroke="#E8C96A" stroke-width="2" stroke-dasharray="3,3" fill="rgba(201, 168, 76, 0.15)"/>
+                        <circle cx="14" cy="14" r="4" fill="#E8C96A"/>
+                    </svg>
+                `),
+                scaledSize: new google.maps.Size(28, 28),
+                anchor: new google.maps.Point(14, 14),
+            };
+        }
+
+        // ── Haversine Distance Calculation ─────────────────────
+        function haversineDistanceKm(lat1, lon1, lat2, lon2) {
+            if (lat1 == null || lon1 == null || lat2 == null || lon2 == null) return null;
+            const R = 6371; // Earth's radius in kilometers
+            const dLat = (lat2 - lat1) * Math.PI / 180;
+            const dLon = (lon2 - lon1) * Math.PI / 180;
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
+        }
+
+        // ── Map State ──────────────────────────────────────────
+        let googleMap = null;
+        let googleMapsReady = false;
+        let configuredMapId = null;
+        let markers = []; // list of google.maps.Marker or AdvancedMarkerElement
+        let centerMarker = null;
+        let radiusCircle = null;
+        let activeInfoWindow = null;
+        let currentSearchCenter = { lat: 28.6139, lng: 77.2090 }; // Default: New Delhi
+        let lawyersList = [];
+        let activeCardIndex = null;
+        let isSortedByDistance = false;
+
+        function showMapError(message) {
+            const mapEl = document.getElementById("googleMap");
+            const errPanel = document.getElementById("mapErrorPanel");
+            const engineText = document.getElementById("mapEngineText");
+
+            if (mapEl) mapEl.style.display = "none";
+            if (errPanel) {
+                errPanel.style.display = "flex";
+                if (message) {
+                    const msgEl = errPanel.querySelector(".map-error-message");
+                    if (msgEl) msgEl.textContent = message;
+                }
+            }
+            if (engineText) engineText.textContent = "Google Maps API Disabled / Offline";
+        }
+
+        function initGoogleMapInstance(mapId) {
+            try {
+                const mapEl = document.getElementById("googleMap");
+                if (!mapEl) return;
+                mapEl.style.display = "block";
+                const errorPanel = document.getElementById("mapErrorPanel");
+                if (errorPanel) errorPanel.style.display = "none";
+
+                const mapOptions = {
+                    center: currentSearchCenter,
+                    zoom: 12,
+                    disableDefaultUI: true,
+                    zoomControl: true,
+                    fullscreenControl: false,
+                    streetViewControl: false,
+                    mapTypeControl: false,
+                };
+
+                if (mapId) {
+                    mapOptions.mapId = mapId;
+                    configuredMapId = mapId;
+                } else {
+                    mapOptions.styles = DARK_MAP_STYLES;
+                }
+
+                googleMap = new google.maps.Map(mapEl, mapOptions);
+                googleMapsReady = true;
+
+                // Add custom Locate Control to Map
+                const locateBtn = document.createElement("button");
+                locateBtn.className = "map-custom-locate-btn";
+                locateBtn.type = "button";
+                locateBtn.title = "Center on My Location";
+                locateBtn.setAttribute("aria-label", "Center on My Location");
+                locateBtn.innerHTML = `
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <circle cx="12" cy="12" r="3"></circle>
+                        <path d="M12 2v3m0 14v3M2 12h3m14 0h3"></path>
+                    </svg>
+                `;
+                locateBtn.addEventListener("click", executeLocationSearch);
+                googleMap.controls[google.maps.ControlPosition.RIGHT_BOTTOM].push(locateBtn);
+
+                activeInfoWindow = new google.maps.InfoWindow();
+                const engineText = document.getElementById("mapEngineText");
+                if (engineText) engineText.textContent = "Google Maps JavaScript API (Dark Mode)";
+            } catch (err) {
+                console.error("Failed to construct google.maps.Map:", err);
+                showMapError("Failed to initialize Google Maps display: " + (err.message || err));
+            }
+        }
+
+        // ── Render Search Results ──────────────────────────────
+        function renderLawyers(lawyers) {
+            const container = document.getElementById("finderResultsList");
+            const countEl = document.getElementById("finderResultsCount");
+            const sortBtn = document.getElementById("sortDistanceBtn");
+
+            // Clear previous map objects
+            markers.forEach((m) => {
+                if (m.setMap) m.setMap(null);
+                else if (m.map) m.map = null;
+            });
+            markers = [];
+            if (centerMarker) {
+                if (centerMarker.setMap) centerMarker.setMap(null);
+                else if (centerMarker.map) centerMarker.map = null;
+                centerMarker = null;
+            }
+            if (radiusCircle) {
+                radiusCircle.setMap(null);
+                radiusCircle = null;
+            }
+            if (activeInfoWindow) activeInfoWindow.close();
+
+            if (!lawyers || lawyers.length === 0) {
+                countEl.textContent = "No advocates found";
+                if (sortBtn) sortBtn.style.display = "none";
+                container.innerHTML = `
+                    <div style="text-align: center; padding: 48px 20px; color: var(--text-secondary);">
+                        <div style="margin-bottom: 12px; display: inline-flex; padding: 16px; border-radius: 50%; background: rgba(201, 168, 76, 0.08); border: 1px solid rgba(201, 168, 76, 0.2);">
+                            ${GAVEL_SCALES_SVG}
+                        </div>
+                        <div style="font-size: 15px; font-weight: 600; color: var(--text-primary); margin-bottom: 6px;">No Advocates Located</div>
+                        <p style="font-size: 13px; line-height: 1.45; max-width: 320px; margin: 0 auto 16px;">
+                            No trademark advocates found in this radius. Try expanding the search radius to 25 km or 50 km, or search a major metro jurisdiction.
+                        </p>
+                    </div>
+                `;
+                return;
+            }
+
+            countEl.textContent = `${lawyers.length} Advocate${lawyers.length === 1 ? '' : 's'} Found`;
+            if (sortBtn) sortBtn.style.display = "inline-flex";
+
+            // If Google Maps is ready, draw markers & circle
+            let bounds = null;
+            if (googleMapsReady && googleMap) {
+                bounds = new google.maps.LatLngBounds();
+                bounds.extend(new google.maps.LatLng(currentSearchCenter.lat, currentSearchCenter.lng));
+
+                // Searched Center Marker
+                centerMarker = new google.maps.Marker({
+                    position: currentSearchCenter,
+                    map: googleMap,
+                    icon: getCenterPinIcon(),
+                    title: "Search Center",
+                });
+
+                // Radius Circle (Dashed subtle gold stroke)
+                const currentRadius = parseInt(document.getElementById("finderRadiusSelect").value, 10) || 10;
+                radiusCircle = new google.maps.Circle({
+                    strokeColor: "#C9A84C",
+                    strokeOpacity: 0.8,
+                    strokeWeight: 1.5,
+                    fillColor: "#C9A84C",
+                    fillOpacity: 0.04,
+                    map: googleMap,
+                    center: currentSearchCenter,
+                    radius: currentRadius * 1000,
+                });
+            }
+
+            container.innerHTML = "";
+
+            lawyers.forEach((lawyer, index) => {
+                const hasCoords = lawyer.latitude != null && lawyer.longitude != null;
+                const distKm = (hasCoords && currentSearchCenter.lat != null)
+                    ? haversineDistanceKm(currentSearchCenter.lat, currentSearchCenter.lng, lawyer.latitude, lawyer.longitude)
+                    : null;
+
+                // Add Google Maps Marker
+                if (googleMapsReady && googleMap && hasCoords) {
+                    const pos = { lat: lawyer.latitude, lng: lawyer.longitude };
+                    const marker = new google.maps.Marker({
+                        position: pos,
+                        map: googleMap,
+                        icon: getGoldPinIcon(),
+                        title: lawyer.name,
+                    });
+
+                    const ratingSnippet = lawyer.rating
+                        ? `<div style="color: #E8C96A; font-weight: 600; margin: 4px 0;">★ ${lawyer.rating} <span style="color: #9CA3AF; font-size: 11px;">(${lawyer.user_ratings_total || 0} reviews)</span></div>`
+                        : `<div style="color: #9CA3AF; font-size: 11px; margin: 4px 0;">No reviews recorded</div>`;
+
+                    const mapsLinkSnippet = lawyer.maps_url
+                        ? `<a href="${lawyer.maps_url}" target="_blank" rel="noopener noreferrer" style="color: #E8C96A; font-size: 11px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px;">Open in Google Maps →</a>`
+                        : "";
+
+                    const infoContent = `
+                        <div style="min-width: 180px; font-family: 'IBM Plex Sans', sans-serif;">
+                            <div style="font-weight: 700; color: #FFFFFF; font-size: 14px;">${escapeHtml(lawyer.name)}</div>
+                            <div style="font-size: 11.5px; color: #D1D5DB; margin-top: 2px;">${escapeHtml(lawyer.address)}</div>
+                            ${ratingSnippet}
+                            ${mapsLinkSnippet}
+                        </div>
+                    `;
+
+                    marker.addListener("click", () => {
+                        selectLawyer(index, false);
+                    });
+
+                    markers[index] = marker;
+                    bounds.extend(pos);
+                }
+
+                // Render Result Card in Right List
+                const card = document.createElement("div");
+                card.className = "lawyer-card-item";
+                card.id = `lawyerCard-${index}`;
+                card.setAttribute("role", "button");
+                card.setAttribute("tabindex", "0");
+                card.setAttribute("aria-label", `Advocate: ${lawyer.name}`);
+
+                // Thumbnail: server-side proxy photo or designed gavel placeholder
+                const thumbnailHtml = lawyer.photo_url
+                    ? `<img src="${lawyer.photo_url}" alt="${escapeHtml(lawyer.name)}" loading="lazy" onerror="this.onerror=null; this.parentElement.innerHTML=\`${GAVEL_SCALES_SVG.replace(/\n/g, '')}\`;" />`
+                    : GAVEL_SCALES_SVG;
+
+                // Ratings snippet
+                const ratingBadge = lawyer.rating
+                    ? `<span style="color: var(--accent-gold); font-weight: 600;">★ ${lawyer.rating}</span> <span style="color: var(--text-muted); font-size: 11px;">(${lawyer.user_ratings_total || 0} reviews)</span>`
+                    : `<span style="color: var(--text-muted); font-size: 11px;">No reviews yet</span>`;
+
+                // Distance badge
+                const distanceBadge = distKm != null
+                    ? `<span class="lawyer-dist-badge">${distKm.toFixed(1)} km away</span>`
+                    : "";
+
+                // Phone & Website links when present
+                const phoneHtml = lawyer.phone
+                    ? `<a href="tel:${escapeHtml(lawyer.phone)}" style="color: var(--text-secondary); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Call advocate"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path></svg>${escapeHtml(lawyer.phone)}</a>`
+                    : "";
+
+                const websiteHtml = lawyer.website
+                    ? `<a href="${escapeHtml(lawyer.website)}" target="_blank" rel="noopener noreferrer" style="color: var(--accent-gold-light); text-decoration: none; display: inline-flex; align-items: center; gap: 4px;" title="Visit official website"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>Website ↗</a>`
+                    : "";
+
+                const mapsBtn = lawyer.maps_url
+                    ? `<a href="${lawyer.maps_url}" target="_blank" rel="noopener noreferrer" class="finder-btn-secondary" style="padding: 4px 10px; font-size: 11px; text-decoration: none; margin-left: auto;" title="View on Google Maps">View on Maps →</a>`
+                    : "";
+
+                card.innerHTML = `
+                    <div class="lawyer-thumbnail-box">
+                        ${thumbnailHtml}
+                    </div>
+                    <div class="lawyer-card-content">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 8px;">
+                            <div class="lawyer-card-title">${escapeHtml(lawyer.name)}</div>
+                            ${distanceBadge}
+                        </div>
+                        <div class="lawyer-card-address">${escapeHtml(lawyer.address)}</div>
+                        <div class="lawyer-card-meta">
+                            <div>${ratingBadge}</div>
+                            ${phoneHtml}
+                            ${websiteHtml}
+                        </div>
+                        <div style="display: flex; align-items: center; gap: 8px; margin-top: 8px; flex-wrap: wrap;">
+                            <span class="dss-cat-tag">DSS Interface Category: Trademark &amp; Arbitration</span>
+                            <div class="source-indicator">
+                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                <span>Google Places Registry</span>
+                            </div>
+                            ${mapsBtn}
+                        </div>
+                    </div>
+                `;
+
+                card.addEventListener("click", () => {
+                    selectLawyer(index, true);
+                });
+
+                card.addEventListener("keydown", (e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        selectLawyer(index, true);
+                    }
+                });
+
+                container.appendChild(card);
+            });
+
+            // Adjust Google Map Bounds to fit results
+            if (googleMapsReady && googleMap && bounds && !bounds.isEmpty()) {
+                googleMap.fitBounds(bounds, { top: 40, right: 40, bottom: 40, left: 40 });
+            }
+        }
+
+        // ── Bidirectional Sync: Select Lawyer ──────────────────
+        function selectLawyer(index, panMap = true) {
+            const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+            // Reset previously selected marker
+            if (activeCardIndex !== null && markers[activeCardIndex]) {
+                const prevMarker = markers[activeCardIndex];
+                prevMarker.setIcon(getGoldPinIcon());
+                if (prevMarker.setAnimation) prevMarker.setAnimation(null);
+                const prevCard = document.getElementById(`lawyerCard-${activeCardIndex}`);
+                if (prevCard) prevCard.classList.remove("selected");
+            }
+
+            activeCardIndex = index;
+            const currentCard = document.getElementById(`lawyerCard-${index}`);
+            if (currentCard) {
+                currentCard.classList.add("selected");
+                currentCard.scrollIntoView({
+                    behavior: prefersReducedMotion ? "auto" : "smooth",
+                    block: "nearest"
+                });
+            }
+
+            const marker = markers[index];
+            const lawyer = lawyersList[index];
+            if (marker && googleMap) {
+                marker.setIcon(getSelectedPinIcon());
+                if (!prefersReducedMotion && marker.setAnimation) {
+                    marker.setAnimation(google.maps.Animation.BOUNCE);
+                    setTimeout(() => { if (marker.setAnimation) marker.setAnimation(null); }, 1500);
+                }
+
+                if (activeInfoWindow && lawyer) {
+                    const ratingSnippet = lawyer.rating
+                        ? `<div style="color: #E8C96A; font-weight: 600; margin: 4px 0;">★ ${lawyer.rating} <span style="color: #9CA3AF; font-size: 11px;">(${lawyer.user_ratings_total || 0} reviews)</span></div>`
+                        : `<div style="color: #9CA3AF; font-size: 11px; margin: 4px 0;">No reviews recorded</div>`;
+
+                    const mapsLinkSnippet = lawyer.maps_url
+                        ? `<a href="${lawyer.maps_url}" target="_blank" rel="noopener noreferrer" style="color: #E8C96A; font-size: 11px; text-decoration: none; font-weight: 600; display: inline-flex; align-items: center; gap: 4px; margin-top: 6px;">Open in Google Maps →</a>`
+                        : "";
+
+                    const infoContent = `
+                        <div style="min-width: 180px; font-family: 'IBM Plex Sans', sans-serif;">
+                            <div style="font-weight: 700; color: #FFFFFF; font-size: 14px;">${escapeHtml(lawyer.name)}</div>
+                            <div style="font-size: 11.5px; color: #D1D5DB; margin-top: 2px;">${escapeHtml(lawyer.address)}</div>
+                            ${ratingSnippet}
+                            ${mapsLinkSnippet}
+                        </div>
+                    `;
+                    activeInfoWindow.setContent(infoContent);
+                    activeInfoWindow.open(googleMap, marker);
+                }
+
+                if (panMap) {
+                    if (prefersReducedMotion) {
+                        googleMap.setCenter(marker.getPosition());
+                        googleMap.setZoom(15);
+                    } else {
+                        googleMap.panTo(marker.getPosition());
+                        if (googleMap.getZoom() < 14) googleMap.setZoom(15);
+                    }
+                }
+            }
+        }
+
+        // ── Search by City Execution ───────────────────────────
+        async function executeSearch(city, radiusKm) {
+            const resultsList = document.getElementById("finderResultsList");
+            const countEl = document.getElementById("finderResultsCount");
+            const statusText = document.getElementById("mapStatusText");
+            const subtextEl = document.getElementById("finderResultsSubtext");
+
+            countEl.textContent = `Searching near ${city}...`;
+            statusText.textContent = `Querying Google Places Registry for ${city}...`;
+            subtextEl.textContent = `Radius: ${radiusKm} km • In Flight`;
+
+            resultsList.innerHTML = `
+                <div class="skeleton-shimmer" style="height: 110px; border-radius: 12px; margin-bottom: 8px;"></div>
+                <div class="skeleton-shimmer" style="height: 110px; border-radius: 12px; margin-bottom: 8px;"></div>
+                <div class="skeleton-shimmer" style="height: 110px; border-radius: 12px;"></div>
+            `;
+
+            try {
+                const url = `/find-lawyers?city=${encodeURIComponent(city)}&radius_km=${encodeURIComponent(radiusKm)}`;
+                const resp = await fetch(url);
+                const data = await resp.json();
+
+                if (!data.success && (!data.lawyers || data.lawyers.length === 0)) {
+                    countEl.textContent = "Search returned no advocates";
+                    statusText.textContent = data.message || "No results";
+                    resultsList.innerHTML = `
+                        <div style="padding: 32px 16px; text-align: center; color: var(--text-secondary);">
+                            <div style="color: #F87171; font-weight: 600; font-size: 14px; margin-bottom: 6px;">Search Notice</div>
+                            <div style="font-size: 13px; line-height: 1.45; max-width: 320px; margin: 0 auto;">${escapeHtml(data.message || 'Could not locate jurisdiction.')}</div>
+                        </div>
+                    `;
+                    return;
+                }
+
+                if (data.coordinates && data.coordinates.lat != null && data.coordinates.lng != null) {
+                    currentSearchCenter = data.coordinates;
+                    if (googleMap) googleMap.setCenter(currentSearchCenter);
+                }
+
+                lawyersList = data.lawyers || [];
+                statusText.textContent = `Jurisdiction: ${city} (${currentSearchCenter.lat.toFixed(3)}, ${currentSearchCenter.lng.toFixed(3)}) • ${lawyersList.length} Advocates`;
+                subtextEl.textContent = `Radius: ${radiusKm} km • Google Places Verified`;
+
+                renderLawyers(lawyersList);
+            } catch (err) {
+                console.error("Lawyer search error:", err);
+                countEl.textContent = "Error executing search";
+                statusText.textContent = "Failed to communicate with legal directory service";
+                resultsList.innerHTML = `
+                    <div style="padding: 24px; text-align: center; color: #FCA5A5;">
+                        <div>Failed to connect to advocate directory server.</div>
+                        <div style="font-size: 12px; margin-top: 4px;">${escapeHtml(err.message)}</div>
+                    </div>
+                `;
+            }
+        }
+
+        // ── Geolocation Execution ──────────────────────────────
+        async function executeLocationSearch() {
+            if (!navigator.geolocation) {
+                alert("Geolocation is not supported by your browser.");
+                return;
+            }
+
+            const radiusKm = parseInt(document.getElementById("finderRadiusSelect").value, 10) || 10;
+            const countEl = document.getElementById("finderResultsCount");
+            const statusText = document.getElementById("mapStatusText");
+
+            countEl.textContent = "Acquiring device coordinates...";
+            statusText.textContent = "Requesting device GPS position...";
+
+            navigator.geolocation.getCurrentPosition(
+                async (pos) => {
+                    const lat = pos.coords.latitude;
+                    const lng = pos.coords.longitude;
+                    currentSearchCenter = { lat, lng };
+
+                    statusText.textContent = `Location acquired (${lat.toFixed(3)}, ${lng.toFixed(3)}) • Querying Places API...`;
+                    countEl.textContent = "Searching nearby advocates...";
+
+                    try {
+                        const url = `/find-lawyers-by-location?lat=${lat}&lng=${lng}&radius_km=${radiusKm}`;
+                        const resp = await fetch(url);
+                        const data = await resp.json();
+
+                        lawyersList = data.lawyers || [];
+                        statusText.textContent = `Current Location (${lat.toFixed(3)}, ${lng.toFixed(3)}) • ${lawyersList.length} Advocates Found`;
+                        renderLawyers(lawyersList);
+                    } catch (e) {
+                        console.error("Coordinates lawyer search failed:", e);
+                        statusText.textContent = "Failed to fetch nearby lawyers for coordinates";
+                    }
+                },
+                (err) => {
+                    console.warn("Geolocation denied or error:", err);
+                    alert("Location access was denied or timed out. Please enter your city name in the search box.");
+                    statusText.textContent = "Location access denied. Using city input.";
+                    countEl.textContent = "Location search cancelled";
+                },
+                { timeout: 10000, enableHighAccuracy: true }
+            );
+        }
+
+        // ── Event Listeners ────────────────────────────────────
+        document.getElementById("finderSearchBtn")?.addEventListener("click", () => {
+            const city = document.getElementById("finderLocationInput").value.trim() || "New Delhi";
+            const radius = parseInt(document.getElementById("finderRadiusSelect").value, 10) || 10;
+            executeSearch(city, radius);
+        });
+
+        document.getElementById("finderLocationInput")?.addEventListener("keydown", (e) => {
+            if (e.key === "Enter") {
+                const city = e.target.value.trim() || "New Delhi";
+                const radius = parseInt(document.getElementById("finderRadiusSelect").value, 10) || 10;
+                executeSearch(city, radius);
+            }
+        });
+
+        document.getElementById("finderRadiusSelect")?.addEventListener("change", (e) => {
+            const city = document.getElementById("finderLocationInput").value.trim() || "New Delhi";
+            const radius = parseInt(e.target.value, 10) || 10;
+            executeSearch(city, radius);
+        });
+
+        document.getElementById("finderLocationBtn")?.addEventListener("click", executeLocationSearch);
+
+        // Sort by Distance Toggle
+        const sortBtn = document.getElementById("sortDistanceBtn");
+        if (sortBtn) {
+            sortBtn.addEventListener("click", () => {
+                if (!lawyersList || lawyersList.length === 0) return;
+                isSortedByDistance = !isSortedByDistance;
+
+                if (isSortedByDistance) {
+                    lawyersList.sort((a, b) => {
+                        const distA = haversineDistanceKm(currentSearchCenter.lat, currentSearchCenter.lng, a.latitude, a.longitude) ?? 99999;
+                        const distB = haversineDistanceKm(currentSearchCenter.lat, currentSearchCenter.lng, b.latitude, b.longitude) ?? 99999;
+                        return distA - distB;
+                    });
+                    sortBtn.style.borderColor = "var(--accent-gold)";
+                    sortBtn.style.color = "var(--accent-gold-light)";
+                } else {
+                    lawyersList.sort((a, b) => (b.rating || 0) - (a.rating || 0));
+                    sortBtn.style.borderColor = "var(--border)";
+                    sortBtn.style.color = "var(--text-secondary)";
+                }
+                renderLawyers(lawyersList);
+            });
+        }
+
+        // Global Search Filter on Results List
+        const searchInput = document.getElementById("globalSearchInput");
+        if (searchInput) {
+            searchInput.addEventListener("input", (e) => {
+                const query = e.target.value.toLowerCase().trim();
+                if (!query) {
+                    renderLawyers(lawyersList);
+                    return;
+                }
+                const filtered = lawyersList.filter(l => {
+                    const nameMatch = (l.name || "").toLowerCase().includes(query);
+                    const addrMatch = (l.address || "").toLowerCase().includes(query);
+                    return nameMatch || addrMatch;
+                });
+                renderLawyers(filtered);
+            });
+        }
+
+        function escapeHtml(str) {
+            if (!str) return "";
+            return String(str)
+                .replace(/&/g, "&amp;")
+                .replace(/</g, "&lt;")
+                .replace(/>/g, "&gt;")
+                .replace(/"/g, "&quot;")
+                .replace(/'/g, "&#039;");
+        }
+
+        // ── Load Maps JS via /config/maps Endpoint ─────────────
+        async function loadMapsAndInit() {
+            window.gm_authFailure = () => {
+                console.error("Google Maps API authentication failed. Verify Maps JavaScript API is enabled in Google Cloud Console.");
+                showMapError("Google Maps authentication failed: Maps JavaScript API may need to be enabled for this key in your Google Cloud Console. Advocate directory remains functional.");
+            };
+
+            const token = sessionStorage.getItem("dss_jwt") || sessionStorage.getItem("dss_token");
+            try {
+                const resp = await fetch("/config/maps", {
+                    headers: token ? { "Authorization": `Bearer ${token}` } : {}
+                });
+
+                if (!resp.ok) {
+                    showMapError("Failed to fetch map configuration from server.");
+                    executeSearch("New Delhi", 10);
+                    return;
+                }
+
+                const config = await resp.json();
+                const browserKey = config.browser_key ? config.browser_key.trim() : "";
+                const mapId = config.map_id ? config.map_id.trim() : "";
+
+                if (!browserKey) {
+                    // Browser key missing: show designed error panel, keep directory functional
+                    showMapError("Google Maps browser key is not configured or failed to load. The advocate directory list remains fully operational.");
+                    executeSearch("New Delhi", 10);
+                    return;
+                }
+
+                let initialized = false;
+                async function handleMapReady() {
+                    if (initialized) return;
+                    initialized = true;
+                    try {
+                        if (window.google?.maps?.importLibrary) {
+                            await google.maps.importLibrary("maps");
+                            await google.maps.importLibrary("marker");
+                            await google.maps.importLibrary("geometry");
+                        }
+                        initGoogleMapInstance(mapId);
+                    } catch (e) {
+                        console.error("Google Maps library import failed:", e);
+                        showMapError("Could not load Google Maps components. Advocate directory remains operational.");
+                    }
+                    executeSearch("New Delhi", 10);
+                }
+
+                window.initGoogleMapCallback = handleMapReady;
+
+                // Dynamically inject Google Maps JS script
+                const script = document.createElement("script");
+                script.src = `https://maps.googleapis.com/maps/api/js?key=${encodeURIComponent(browserKey)}&libraries=marker,geometry&loading=async&callback=initGoogleMapCallback`;
+                script.async = true;
+                script.onload = () => {
+                    setTimeout(handleMapReady, 100);
+                };
+                script.onerror = () => {
+                    showMapError("Failed to load Google Maps JavaScript API script.");
+                    executeSearch("New Delhi", 10);
+                };
+                document.head.appendChild(script);
+            } catch (err) {
+                console.warn("Map configuration load error:", err);
+                showMapError("Failed to initialize map service.");
+                executeSearch("New Delhi", 10);
+            }
+        }
+
+        window.addEventListener("DOMContentLoaded", loadMapsAndInit);
+    </script>
+</body>
+</html>

@@ -10,15 +10,19 @@ sys.path.insert(0, PROJECT_ROOT)
 import pydantic_v1_compat  # noqa: F401 — must be before chromadb
 
 from fastapi import FastAPI, Form, HTTPException, Depends, Request, status
-from fastapi.responses import FileResponse, JSONResponse
+from fastapi.responses import FileResponse, JSONResponse, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 import uvicorn
 import time
+import requests
+
+from collections import defaultdict
+from typing import Optional
 
 from config import OUTPUT_DIR, ALLOWED_ORIGINS
 from logging_config import logger
-from db import init_db, get_db, User
+from db import init_db, get_db, User, Case
 from auth import (
     get_password_hash,
     verify_password,
@@ -26,6 +30,9 @@ from auth import (
     get_current_user,
     require_admin,
     VALID_ROLES,
+    PUBLIC_SIGNUP_ROLES,
+    validate_photo_reference,
+    verify_photo_signature,
 )
 from agents.arbitrability_agent import check_arbitrability
 from agents.landmark_retrieval_agent import retrieve_landmarks, analyze_landmark_applicability
@@ -127,10 +134,10 @@ async def signup(
         raise HTTPException(status_code=400, detail="A valid email address is required.")
     if not password or len(password) < 6:
         raise HTTPException(status_code=400, detail="Password must be at least 6 characters.")
-    if role not in VALID_ROLES:
+    if role == "admin" or role not in PUBLIC_SIGNUP_ROLES:
         raise HTTPException(
             status_code=400,
-            detail=f"Invalid role '{role}'. Allowed roles: {list(VALID_ROLES)}",
+            detail=f"Invalid role: registration with role '{role}' is not permitted via public signup. Allowed roles: {sorted(list(PUBLIC_SIGNUP_ROLES))}",
         )
 
     existing_user = db.query(User).filter(User.email == email).first()
@@ -226,6 +233,7 @@ async def analyze_dispute(
     affects_third_parties: str = Form(...),
     dispute_description: str = Form(...),
     current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
 ):
     """Analyze a trademark dispute and generate DSS report (Requires Authentication)."""
     try:
@@ -316,6 +324,27 @@ async def analyze_dispute(
 
         filename = os.path.basename(filepath)
 
+        try:
+            case_count = db.query(Case).count()
+            case_id_str = f"TMA-2026-{case_count + 1:04d}"
+            case_status = "pending" if arbitrability_result.requires_manual_review else ("approved" if arbitrability_result.is_arbitrable else "rejected")
+            new_case = Case(
+                case_id=case_id_str,
+                user_email=current_user.email,
+                party_a=party_a,
+                party_b=party_b,
+                trademark_name=trademark_name,
+                dispute_type=dispute_type,
+                status=case_status,
+                arbitrability=arbitrability_result.status,
+                report_filename=filename,
+            )
+            db.add(new_case)
+            db.commit()
+            logger.info(f"Saved case record {case_id_str} for user {current_user.email}")
+        except Exception as db_err:
+            logger.warning(f"Could not persist case record: {db_err}")
+
         adv = adversarial_analysis if isinstance(adversarial_analysis, dict) else {}
         overall_position = adv.get("overall_legal_position", "") or ""
         adversarial_summary = {
@@ -364,10 +393,144 @@ async def analyze_dispute(
         )
 
 
+@app.get("/cases")
+async def list_cases_endpoint(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """List recent dispute cases for current authenticated user or all if admin."""
+    if current_user.role == "admin":
+        cases = db.query(Case).order_by(Case.created_at.desc()).all()
+    else:
+        cases = (
+            db.query(Case)
+            .filter(Case.user_email == current_user.email)
+            .order_by(Case.created_at.desc())
+            .all()
+        )
+
+    total = len(cases)
+    pending = sum(1 for c in cases if c.status == "pending")
+    approved = sum(1 for c in cases if c.status == "approved")
+    rejected = sum(1 for c in cases if c.status == "rejected")
+
+    return {
+        "status": "success",
+        "total": total,
+        "pending": pending,
+        "approved": approved,
+        "rejected": rejected,
+        "cases": [c.to_dict() for c in cases],
+    }
+
+
+PHOTO_RATE_LIMIT_PER_MINUTE = 60
+_photo_rate_timestamps = defaultdict(list)
+
+
+def _check_photo_rate_limit(client_ip: str) -> bool:
+    now = time.time()
+    cutoff = now - 60.0
+    _photo_rate_timestamps[client_ip] = [t for t in _photo_rate_timestamps[client_ip] if t > cutoff]
+    if len(_photo_rate_timestamps[client_ip]) >= PHOTO_RATE_LIMIT_PER_MINUTE:
+        return False
+    _photo_rate_timestamps[client_ip].append(now)
+    return True
+
+
+@app.get("/config/maps")
+async def get_maps_config(current_user: User = Depends(get_current_user)):
+    """
+    Return Google Maps JavaScript API configuration for authenticated sessions.
+    Uses GOOGLE_MAPS_BROWSER_KEY or falls back to GOOGLE_PLACES_API_KEY if shared under Maps Platform.
+    """
+    browser_key = os.getenv("GOOGLE_MAPS_BROWSER_KEY") or os.getenv("GOOGLE_PLACES_API_KEY") or ""
+    return {
+        "status": "success",
+        "browser_key": browser_key,
+        "map_id": os.getenv("GOOGLE_MAPS_MAP_ID", ""),
+    }
+
+
+@app.get("/places/photo")
+async def proxy_places_photo(
+    request: Request,
+    photo_reference: str,
+    maxwidth: int = 400,
+    expires: Optional[int] = None,
+    sig: Optional[str] = None,
+):
+    """
+    Hardened proxy for Google Places photos.
+    - Validates photo_reference format and length (rejects bad references with 400).
+    - Requires and verifies HMAC signature & expiration timestamp (rejects missing/invalid/expired with 403).
+    - Clamps maxwidth to 100-800.
+    - Applies per-client rate limiting (429).
+    - Returns only image/* content types.
+    - Never leaks the API key or upstream error bodies to the client.
+    """
+    # 1. Validate photo_reference format
+    if not validate_photo_reference(photo_reference):
+        raise HTTPException(
+            status_code=400,
+            detail="Invalid photo_reference parameter. Must be alphanumeric identifier.",
+        )
+
+    # 2. Verify HMAC signature and expiration
+    if expires is None or sig is None:
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: photo proxy request requires valid signature and expiry timestamp.",
+        )
+
+    if not verify_photo_signature(photo_reference, maxwidth, expires, sig):
+        raise HTTPException(
+            status_code=403,
+            detail="Forbidden: invalid or expired photo proxy signature.",
+        )
+
+    # 3. Rate limiting
+    client_ip = request.client.host if request.client else "unknown"
+    if not _check_photo_rate_limit(client_ip):
+        raise HTTPException(
+            status_code=429,
+            detail="Too many photo requests. Please slow down.",
+        )
+
+    # 4. Clamp maxwidth
+    clamped_width = max(100, min(800, int(maxwidth)))
+
+    # 5. Fetch photo from Google Places
+    api_key = os.getenv("GOOGLE_PLACES_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=404, detail="Photo service unavailable")
+
+    google_photo_url = (
+        f"https://maps.googleapis.com/maps/api/place/photo"
+        f"?maxwidth={clamped_width}&photo_reference={photo_reference}&key={api_key}"
+    )
+
+    try:
+        resp = requests.get(google_photo_url, stream=True, timeout=10)
+        if resp.status_code != 200:
+            raise HTTPException(status_code=404, detail="Photo not found")
+
+        content_type = resp.headers.get("content-type", "")
+        if not content_type.startswith("image/"):
+            raise HTTPException(status_code=404, detail="Photo not found")
+
+        return Response(content=resp.content, media_type=content_type)
+    except HTTPException:
+        raise
+    except Exception:
+        raise HTTPException(status_code=404, detail="Photo not found")
+
+
 @app.get("/find-lawyers")
 async def find_lawyers_endpoint(
     city: str,
     dispute_type: str = "trademark",
+    radius_km: int = 10,
 ):
     """
     Find nearby trademark advocates by city name.
@@ -375,12 +538,13 @@ async def find_lawyers_endpoint(
     User never types or sees coordinates.
     """
     try:
-        result = find_nearby_lawyers(city, dispute_type)
+        result = find_nearby_lawyers(city, dispute_type, radius_km=radius_km)
         return result
     except Exception as e:
         return {
             "success": False,
             "city": city,
+            "radius_km": radius_km,
             "lawyers": [],
             "count": 0,
             "message": f"Search failed: {str(e)}",
@@ -392,6 +556,7 @@ async def find_lawyers_by_location_endpoint(
     lat: float,
     lng: float,
     dispute_type: str = "trademark",
+    radius_km: int = 10,
 ):
     """
     Find nearby trademark advocates using coordinates.
@@ -400,12 +565,14 @@ async def find_lawyers_by_location_endpoint(
     """
     try:
         result = find_lawyers_by_coordinates(
-            lat, lng, dispute_type
+            lat, lng, dispute_type, radius_km=radius_km
         )
         return result
     except Exception as e:
         return {
             "success": False,
+            "coordinates": {"lat": lat, "lng": lng},
+            "radius_km": radius_km,
             "lawyers": [],
             "count": 0,
             "message": f"Location search failed: {str(e)}",

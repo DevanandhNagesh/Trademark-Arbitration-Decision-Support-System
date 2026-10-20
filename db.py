@@ -43,6 +43,43 @@ class User(Base):
         }
 
 
+class Case(Base):
+    """Case model for storing submitted dispute evaluations."""
+
+    __tablename__ = "cases"
+
+    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
+    case_id = Column(String, unique=True, index=True, nullable=False)
+    user_email = Column(String, index=True, nullable=False)
+    party_a = Column(String, nullable=False)
+    party_b = Column(String, nullable=False)
+    trademark_name = Column(String, nullable=False)
+    dispute_type = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="pending")  # "pending", "approved", "rejected"
+    arbitrability = Column(String, nullable=True)
+    report_filename = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
+
+    def to_dict(self) -> dict:
+        return {
+            "id": self.id,
+            "case_id": self.case_id,
+            "user_email": self.user_email,
+            "parties": f"{self.party_a} v. {self.party_b}",
+            "party_a": self.party_a,
+            "party_b": self.party_b,
+            "trademark": self.trademark_name,
+            "trademark_name": self.trademark_name,
+            "dispute_type": self.dispute_type,
+            "status": self.status,
+            "arbitrability": self.arbitrability,
+            "created": self.created_at.strftime("%d %b %Y") if self.created_at else "",
+            "created_at": self.created_at.isoformat() if self.created_at else "",
+            "report_filename": self.report_filename,
+            "download_url": f"/download/{self.report_filename}" if self.report_filename else None,
+        }
+
+
 def init_db() -> None:
     """Initialize database tables."""
     Base.metadata.create_all(bind=engine)

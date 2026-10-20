@@ -125,10 +125,10 @@ def test_signup_invalid_role_fails(client):
 
 
 def test_login_successful(client):
-    # Register user first
+    # Register user (lawyer)
     client.post(
         "/auth/signup",
-        json={"email": "arbitrator@odr.in", "password": "ArbitratorPass123", "role": "admin"},
+        json={"email": "arbitrator@odr.in", "password": "ArbitratorPass123", "role": "lawyer"},
     )
 
     # Login
@@ -140,7 +140,7 @@ def test_login_successful(client):
     data = response.json()
     assert data["status"] == "success"
     assert "access_token" in data
-    assert data["user"]["role"] == "admin"
+    assert data["user"]["role"] == "lawyer"
 
 
 def test_login_wrong_password_fails(client):
@@ -190,12 +190,22 @@ def test_admin_endpoint_role_enforcement(client):
     )
     lawyer_token = lawyer_res.json()["access_token"]
 
-    # Register admin
-    admin_res = client.post(
-        "/auth/signup",
-        json={"email": "admin@dss.in", "password": "AdminPass123", "role": "admin"},
+    # Create admin directly in database
+    db = TestingSessionLocal()
+    admin_user = User(
+        email="admin@dss.in",
+        hashed_password=get_password_hash("AdminPass123"),
+        role="admin",
     )
-    admin_token = admin_res.json()["access_token"]
+    db.add(admin_user)
+    db.commit()
+    db.close()
+
+    admin_login = client.post(
+        "/auth/login",
+        json={"email": "admin@dss.in", "password": "AdminPass123"},
+    )
+    admin_token = admin_login.json()["access_token"]
 
     # Lawyer accessing admin endpoint should get 403 Forbidden
     forbidden_res = client.get("/admin/users", headers={"Authorization": f"Bearer {lawyer_token}"})
@@ -260,3 +270,17 @@ def test_analyze_with_valid_token_authenticates_properly(client):
 
     assert response.status_code == 200
     assert response.json()["status"] == "success"
+
+    # Verify that the case was persisted and is returned by GET /cases
+    cases_res = client.get("/cases", headers={"Authorization": f"Bearer {token}"})
+    assert cases_res.status_code == 200
+    cases_data = cases_res.json()
+    assert cases_data["status"] == "success"
+    assert cases_data["total"] == 1
+    assert cases_data["cases"][0]["trademark"] == "TESTMARK"
+    assert cases_data["cases"][0]["parties"] == "Brand A v. Brand B"
+
+
+def test_cases_endpoint_requires_authentication(client):
+    response = client.get("/cases")
+    assert response.status_code == 401

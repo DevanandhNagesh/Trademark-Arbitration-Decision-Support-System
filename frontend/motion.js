@@ -75,7 +75,7 @@ export function initMotion() {
     // 3. Card Spotlight Follow (--mx, --my)
     if (!isReducedMotion && isFinePointer) {
         function attachSpotlights() {
-            const cards = document.querySelectorAll(".card, .auth-card, .disclaimer-modal, .bento-card, .use-case-card, .pipeline-step-card, .brand, .safety-panel");
+            const cards = document.querySelectorAll(".card, .auth-card, .disclaimer-modal, .bento-card, .use-case-card, .pipeline-step-card, .brand, .safety-panel, .about-panel, .about-visual-card, .about-principle-item");
             cards.forEach(card => {
                 if (!card.dataset.spotlightBound) {
                     card.dataset.spotlightBound = "true";

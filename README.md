@@ -166,14 +166,50 @@ To run the harness, use:
 
 ```bash
 # Run Part A & Part B (Fast Mode, un-metered, skipping LLM classifications)
-python evaluation_harness.py --skip-llm
+python evaluation/evaluation_harness.py --skip-llm
 
 # Run full evaluation (Part A classification + Part B retrieval under both Online/Offline modes)
-python evaluation_harness.py
+python evaluation/evaluation_harness.py
 ```
 
-* **Output Markdown Report:** `evaluation_report.md` (paper-ready tables containing Precision, Recall, F1, and tier breakdowns)
-* **Output JSON File:** `evaluation_results.json` (raw metric payload)
+* **Output Markdown Report:** `evaluation/evaluation_report.md` (paper-ready tables containing Precision, Recall, F1, and tier breakdowns)
+* **Output JSON File:** `evaluation/evaluation_results.json` (raw metric payload)
+
+## Commands Reference
+
+### 1. Launching the Application
+```bash
+# Start FastAPI backend (serves API and frontend on port 8000)
+uvicorn api.main:app --reload --port 8000
+```
+Open [http://localhost:8000](http://localhost:8000) in your browser.
+
+### 2. Running Tests
+```bash
+# Run full pytest suite
+python -m pytest tests -v
+```
+
+### 3. Running Data Pipeline & Model Training
+```bash
+# Step 1: Extract text from raw legal PDFs (data/raw_pdfs/ -> data/extracted_text/)
+python scripts/extract_pdf.py
+
+# Step 2: Clean and normalize extracted text (data/extracted_text/ -> data/cleaned_text/)
+python scripts/clean_text.py
+
+# Step 3: Chunk cleaned text with sliding window (data/cleaned_text/ -> data/chunks/)
+python scripts/chunk_documents.py
+
+# Step 4: Embed chunks with all-MiniLM-L6-v2 and index into ChromaDB
+python scripts/load_chroma.py
+
+# Step 5: Compile training data from test scenarios (-> data/training/dispute_training_data.json)
+python scripts/prepare_training_data.py
+
+# Step 6: Train and evaluate dispute classifier (models/dispute_classifier.joblib)
+python agents/dispute_classifier.py --data data/training/dispute_training_data.json --save models/dispute_classifier.joblib
+```
 
 ## Output
 
@@ -196,17 +232,31 @@ Each report contains 6 sections:
 
 ```
 trademark-arbitration-dss/
-├── agents/                # Core logic agents
-├── api/                   # FastAPI application
-├── data/                  # Raw PDFs and intermediate text assets
-├── frontend/              # Single-file UI
-├── knowledge_base/        # ChromaDB persistence (local only)
-├── output/                # Generated reports (local only)
-├── scripts/               # Knowledge base build scripts
-├── tests/                 # Test scenarios
-├── config.py              # Configuration and landmark registry
-├── requirements.txt
-└── .env.template
+├── agents/                # Neuro-symbolic decision, classification, retrieval, drafting & reporting agents
+├── api/                   # FastAPI application routes, middleware, and server endpoints
+├── data/                  # Source legal PDF repository, extracted/cleaned texts, chunks, and training data
+├── docs/                  # Academic documents, IEEE paper drafts, review reports, and UI audit assets
+│   ├── assets/            # Documentation screenshots and UI audit captures
+│   ├── paper/             # IEEE conference paper drafts and working texts
+│   └── review_1/          # Review 1 submission report (.docx, .md) and document generator
+├── evaluation/            # Quantitative evaluation harness, retrieval diagnostics, and benchmark reports
+├── frontend/              # HTML/CSS/JavaScript single-page arbitrator dashboard and auth interfaces
+├── knowledge_base/        # Persistent ChromaDB vector database index files
+├── logs/                  # Application event logs and classification disagreement traces
+├── models/                # Serialized machine learning models (TF-IDF + LinearSVC pipeline)
+├── output/                # Generated Word (.docx) preliminary arbitral decision reports
+├── scratch/               # Local experiments, scratch extracts, and temporary developer scripts
+├── scripts/               # Legal dataset ingestion, text cleaning, chunking, and embedding pipelines
+│   └── dev/               # Development testing scripts (Playwright UI verification, screenshot audits)
+├── tests/                 # Pytest test suite for arbitrability rules, auth, citations, and scenarios
+│   └── test_cases/        # 28 Canonical trademark dispute ground-truth scenarios
+├── .env.example           # Template for required environment variables and API keys
+├── auth.py                # JWT authentication, role authorization, and password security
+├── config.py              # System constants, threshold settings, and landmark case registry
+├── db.py                  # SQLite database engine, session management, and ORM models
+├── logging_config.py      # Structured application logging configuration
+├── pydantic_v1_compat.py  # Backward-compatibility layer for Pydantic v1/v2 interoperability
+└── requirements.txt       # Project Python package dependencies
 ```
 
 ## API Endpoints
